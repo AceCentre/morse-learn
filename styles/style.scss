@@ -68,10 +68,8 @@ body {
   justify-content: center;
   height: 100%;
   font-size: 7vh;
-  margin-left: 10px;
-  max-width: 100%;
   outline: none;
-  width: 250px;
+  width: 100%;
 }
 
 #dash > span {
@@ -94,9 +92,7 @@ body {
   height: 100%;
   font-size: 7vh;
   outline: none;
-  margin-right: 10px;
-  max-width: 100%;
-  width: 250px;
+  width: 100%;
 }
 
 #dot > span {
@@ -115,7 +111,9 @@ body {
   display: flex;
   height: 100%;
   padding: 15px 20px 25px;
-  width: calc(100% - 40px);
+  gap: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 #output {
@@ -155,6 +153,8 @@ body {
   display: flex;
   flex-direction: row;
   height: 100%;
+  flex-grow: 1;
+  flex-basis: 100%;
 }
 
 .key-container {
