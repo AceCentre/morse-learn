@@ -21,7 +21,18 @@ const isLandscape = window.innerWidth > window.innerHeight;
 // Cap the width at double the height
 const aspectRatio = 1.45
 const maxWidth = getGameAreaHeight() * aspectRatio
-const appWidth = Math.min(document.body.clientWidth, maxWidth)
+const appWidth = Math.min(document.body.clientWidth, maxWidth, 800)
+
+const centreOffset = 0.5;
+
+
+const mainFontSize = 70
+const titleOffset = 60
+const startButtonOffset = 190
+const startButtonSize = 37
+
+const letterSize = Math.min( window.innerWidth / 18, 42) ;
+
 
 const config = {
   GLOBALS: {
@@ -31,14 +42,14 @@ const config = {
     appHeight: getClientHeight(),
     devicePixelRatio: window.devicePixelRatio,
     worldBottom: (!isLandscape ? getClientHeight() : appWidth) - getKeyboardHeight(),
-    worldCenter: ((!isLandscape ? getClientHeight() : appWidth) - getKeyboardHeight()) * 0.55,
+    worldCenter: ((!isLandscape ? getClientHeight() : appWidth) - getKeyboardHeight()) * centreOffset,
     worldTop: ((!isLandscape ? getClientHeight() : appWidth) - getKeyboardHeight()) * 0.35
   },
   app: {
     LEARNED_THRESHOLD: 2,
     CONSECUTIVE_CORRECT: 3,
     howManyWordsToStart: 2,
-    wordBrickSize: 300,
+    wordBrickSize: 200,
     wordLetterSize: 150,
     spaceBetweenWords: 300,
     backgroundColor: '#ef4136',
@@ -48,14 +59,14 @@ const config = {
     font: 'Poppins, Helvetica, Arial, sans-serif',
   },
   header: {
-    letterSize: 42,
+    letterSize,
     topPosition: 30,
   },
   title: {
-    mainFontSize: 170,
-    startButtonSize: 60,
-    titleOffset: -200,
-    startButtonOffset: 100
+    mainFontSize,
+    startButtonSize,
+    titleOffset,
+    startButtonOffset
   },
   hints: {
     hintOffset: 120,
