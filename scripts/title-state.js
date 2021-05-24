@@ -68,13 +68,17 @@ class TitleState {
         const randomiseSettings = document.getElementById('randomiseSettings').checked
 
         if(randomiseSettings) {
-          const audio = randomBoolean()
+          let audio = randomBoolean()
           let speechAssistive = randomBoolean()
-          const visualCues = randomBoolean()
+          let visualCues = randomBoolean()
 
           // Not perfectly random but means we don't get invalid settings
           if(audio === false) {
             speechAssistive = false;
+          }
+
+          if(audio === false && speechAssistive === false && visualCues === false) {
+            audio = true;
           }
 
           console.log('Going to randomise your settings:', {speechAssistive, audio, visualCues})
