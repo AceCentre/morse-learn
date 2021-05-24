@@ -25,7 +25,14 @@ const appWidth = Math.min(document.body.clientWidth, maxWidth, 800)
 
 const centreOffset = 0.5;
 
-console.log({ worldCenter: ((!isLandscape ? getClientHeight() : appWidth) - getKeyboardHeight()) * 0.55 + centreOffset })
+
+const mainFontSize = 70
+const titleOffset = 60
+const startButtonOffset = 190
+const startButtonSize = 37
+
+const letterSize = Math.min( window.innerWidth / 18, 42) ;
+
 
 const config = {
   GLOBALS: {
@@ -52,14 +59,14 @@ const config = {
     font: 'Poppins, Helvetica, Arial, sans-serif',
   },
   header: {
-    letterSize: 42,
+    letterSize,
     topPosition: 30,
   },
   title: {
-    mainFontSize: 120,
-    startButtonSize: 60,
-    titleOffset: -100,
-    startButtonOffset: 100
+    mainFontSize,
+    startButtonSize,
+    titleOffset,
+    startButtonOffset
   },
   hints: {
     hintOffset: 120,
