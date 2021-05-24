@@ -68,13 +68,17 @@ class TitleState {
         const randomiseSettings = document.getElementById('randomiseSettings').checked
 
         if(randomiseSettings) {
-          const audio = randomBoolean()
+          let audio = randomBoolean()
           let speechAssistive = randomBoolean()
-          const visualCues = randomBoolean()
+          let visualCues = randomBoolean()
 
           // Not perfectly random but means we don't get invalid settings
           if(audio === false) {
             speechAssistive = false;
+          }
+
+          if(audio === false && speechAssistive === false && visualCues === false) {
+            audio = true;
           }
 
           console.log('Going to randomise your settings:', {speechAssistive, audio, visualCues})
@@ -336,18 +340,14 @@ class TitleState {
     circle.drawCircle(
       0,
       0,
-      !this.game.device.desktop
-        ? config.title.mainFontSize * 3.5
-        : config.title.mainFontSize * 2.5
+      config.title.mainFontSize * 3
     );
     circle.alpha = 0.4;
     circle.anchor.set(0.5, 0.5);
     circle.position.x = this.game.world.centerX;
     circle.position.y =
       this.game.world.centerY +
-      (!this.game.device.desktop
-        ? config.title.titleOffset
-        : config.title.titleOffset * 0.7);
+      (config.title.titleOffset);
     circle.scale.x = 0;
     circle.scale.y = 0;
     circle.endFill();
@@ -364,19 +364,15 @@ class TitleState {
     let title = this.game.add.text(
       this.game.world.centerX,
       this.game.world.centerY +
-        (!this.game.device.desktop
-          ? config.title.titleOffset
-          : config.title.titleOffset * 0.7),
+        (config.title.titleOffset),
       titleText,
       {
         align: "center",
       }
     );
-    title.lineSpacing = -40;
+    title.lineSpacing = -10;
     title.fill = "#F1E4D4";
-    title.fontSize = !this.game.device.desktop
-      ? config.title.mainFontSize
-      : config.title.mainFontSize * 0.7;
+    title.fontSize = config.title.mainFontSize;
     title.anchor.setTo(0.5);
     title.font = config.typography.font;
 
@@ -404,14 +400,12 @@ class TitleState {
 
   // Check if intro has been watched, if so, skip
   checkWatchedIntro() {
+
+
+
     return new Promise((resolve) => {
       if (typeof Storage !== "undefined") {
-        if (localStorage.intro) {
-          const saved = localStorage.getItem("intro");
-          resolve(saved);
-        } else {
-          resolve(false);
-        }
+        resolve(getBoolFromLocalStore('intro'))
       }
     });
   }
@@ -420,10 +414,10 @@ class TitleState {
     // Prevent game from restarting on user input
     if (!this.hasStarted) {
       // Check whether we should play video or not
-      this.checkWatchedIntro().then((intro) => {
+      this.checkWatchedIntro().then((hasViewedIntro) => {
         document.getElementById("button").style.display = "none";
         this.game.state.start(
-          intro || this.game.device.iOS ? "game" : "intro",
+          hasViewedIntro ? "game" : "intro",
           true,
           false,
           this.letterScoreDict
