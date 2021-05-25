@@ -30,6 +30,8 @@ body {
   font-weight: 800;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
@@ -386,6 +388,7 @@ body {
   max-width: 600px;
   width: 80%;
   margin: 0 auto;
+  overflow: auto;
 
   box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.5);
 

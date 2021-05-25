@@ -18,13 +18,22 @@ import { getClientHeight, getKeyboardHeight, getGameAreaHeight } from './util'
 const isTouch = 'ontouchstart' in document.documentElement;
 const isLandscape = window.innerWidth > window.innerHeight;
 
+const breakPointerSwitcher = ({ breakpoint = 500, below, above }) => {
+
+  const width = document.body.clientWidth;
+
+  if(width > breakpoint) return above;
+
+  return below;
+
+}
+
 // Cap the width at double the height
 const aspectRatio = 1.45
 const maxWidth = getGameAreaHeight() * aspectRatio
 const appWidth = Math.min(document.body.clientWidth, maxWidth, 800)
 
-const centreOffset = 0.5;
-
+const centreOffset = breakPointerSwitcher({ above: 0.5, below: 0.35 });
 
 const mainFontSize = 70
 const titleOffset = 60
@@ -33,6 +42,8 @@ const startButtonSize = 37
 
 const letterSize = Math.min( window.innerWidth / 18, 42) ;
 
+const wordBrickSize = breakPointerSwitcher({ above: 200, below: 100 });
+const wordLetterSize = breakPointerSwitcher({ above: 150, below: 50 });
 
 const config = {
   GLOBALS: {
@@ -49,8 +60,8 @@ const config = {
     LEARNED_THRESHOLD: 2,
     CONSECUTIVE_CORRECT: 3,
     howManyWordsToStart: 2,
-    wordBrickSize: 200,
-    wordLetterSize: 150,
+    wordBrickSize,
+    wordLetterSize,
     spaceBetweenWords: 300,
     backgroundColor: '#ef4136',
     smoothed: true,
