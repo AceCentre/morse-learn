@@ -56,7 +56,12 @@ class TitleState {
     } else { // If the user hasn't responded we can wait until they do
       // Show the modal
       const consentModal = document.getElementById('consent-modal');
+      const innerModal = document.getElementById('inner-modal')
       consentModal.focus()
+      
+      if(this.game.device.iPhone) consentModal.style.alignItems = 'flex-start';
+      if(this.game.device.iPhone) innerModal.style.maxHeight = '70vh';
+
       consentModal.style.display = 'flex';
 
       const consentYesButton = document.getElementById('consent-yes')
