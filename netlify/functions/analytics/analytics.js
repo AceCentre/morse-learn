@@ -32,6 +32,7 @@ const handler = async (event, context) => {
     const speechHints = body.speechHints;
     const visualHints = body.visualHints;
     const progressDump = body.progress;
+    const letterData = body.letterData || null;
     const progressPercent = calculateProgressPercent(progressDump);
     const settingsDump = {
       sound,
@@ -53,13 +54,31 @@ const handler = async (event, context) => {
     let userIdentifier = getUserIdCookie(event.headers.cookie);
     if (!userIdentifier) userIdentifier = uuidv4();
 
+    const { results: [ lastProgressLog ] } = await query(connection, `
+    SELECT settingsDump, dateCreated from progress_log
+    WHERE userIdentifier = ?
+    ORDER BY dateCreated DESC
+    LIMIT 1
+    `, [userIdentifier]);
+
+    let settingsChanged = false;
+
+    if(lastProgressLog) {
+      const oldSettingsDump = JSON.parse(lastProgressLog.settingsDump);
+      
+      if(oldSettingsDump.sound !== settingsDump.sound) settingsChanged = true;
+      if(oldSettingsDump.speechHints !== settingsDump.speechHints) settingsChanged = true;
+      if(oldSettingsDump.visualHints !== settingsDump.visualHints) settingsChanged = true;
+    } 
+
+
     // We always want to add a progress log
     await query(
       connection,
       `
     INSERT INTO progress_log 
-    (userIdentifier, progressDump, progressPercent, timePlayed, dateCreated, visualHints, speechHints, sound, settingsDump)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (userIdentifier, progressDump, progressPercent, timePlayed, dateCreated, visualHints, speechHints, sound, settingsDump, progressDetail, settingsChanged)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
       [
         userIdentifier,
@@ -71,6 +90,8 @@ const handler = async (event, context) => {
         speechHints,
         sound,
         JSON.stringify(settingsDump),
+        JSON.stringify(letterData) || null,
+        settingsChanged
       ]
     );
 
