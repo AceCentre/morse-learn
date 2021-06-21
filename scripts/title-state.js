@@ -254,7 +254,8 @@ class TitleState {
       const visualHints = getBoolFromLocalStore('have_visual_cues')
       const sound = getBoolFromLocalStore('have_audio')
       const speechHints = getBoolFromLocalStore('have_speech_assistive')
-      const progress = localStorage.getItem('savedLetters') || EMPTY_PROGRESS;
+      const progress = localStorage.getItem('savedLetters') || JSON.stringify(EMPTY_PROGRESS);
+      const letterData = localStorage.getItem('analyticsData') || JSON.stringify(EMPTY_ANALYTICS);
       const timePlayed = parseInt(localStorage.getItem(TIMEKEY))
 
       const data = {
@@ -262,7 +263,8 @@ class TitleState {
         visualHints,
         sound,
         speechHints,
-        progress: JSON.parse(progress)
+        progress: JSON.parse(progress),
+        letterData: JSON.parse(letterData)
       }
 
       await fetch('/.netlify/functions/analytics', {
@@ -433,5 +435,112 @@ class TitleState {
 }
 
 const EMPTY_PROGRESS = {"e":0,"t":0,"a":0,"i":0,"m":0,"s":0,"o":0,"h":0,"n":0,"c":0,"r":0,"d":0,"u":0,"k":0,"l":0,"f":0,"b":0,"p":0,"g":0,"j":0,"v":0,"q":0,"w":0,"x":0,"y":0,"z":0}
+// The default for the analytics
+const EMPTY_ANALYTICS = {
+  "e": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "t": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "a": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "i": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "m": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "s": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "o": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "h": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "n": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "c": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "r": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "d": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "u": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "k": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "l": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "f": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "b": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "p": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "g": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "j": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "v": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "q": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "w": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "x": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "y": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "z": {
+      "wrong": 0,
+      "correct": 0
+  }
+}
 
 module.exports.TitleState = TitleState;
