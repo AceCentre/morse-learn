@@ -32,7 +32,7 @@ const handler = async (event, context) => {
     const speechHints = body.speechHints;
     const visualHints = body.visualHints;
     const progressDump = body.progress;
-    const letterData = body.letterData || null;
+    const letterData = body.letterData ? JSON.stringify(body.letterData) : null;
     const progressPercent = calculateProgressPercent(progressDump);
     const settingsDump = {
       sound,
@@ -90,7 +90,7 @@ const handler = async (event, context) => {
         speechHints,
         sound,
         JSON.stringify(settingsDump),
-        JSON.stringify(letterData) || null,
+        letterData,
         settingsChanged
       ]
     );
