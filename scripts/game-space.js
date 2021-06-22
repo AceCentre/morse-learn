@@ -240,7 +240,11 @@ class GameSpace {
     this.inputReady = false;
     let word = this.currentWords[this.currentWordIndex];
     let letter = word.myLetters[word.currentLetterIndex];
+
+    // Got a letter correct
     if (typedLetter === letter) {
+      incrementCorrectCount(letter);
+
       this.mistakeCount = 0;
       this.consecutiveCorrect++;
 
@@ -290,6 +294,9 @@ class GameSpace {
       }
     
     } else {
+      // Got a letter wrong
+      incrementWrongCount(letter);
+
       this.mistakeCount++;
       this.consecutiveCorrect = 0;
 
@@ -493,5 +500,137 @@ class GameSpace {
     });
   }
 }
+
+// The default for the analytics
+const EMPTY_ANALYTICS = {
+  "e": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "t": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "a": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "i": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "m": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "s": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "o": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "h": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "n": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "c": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "r": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "d": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "u": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "k": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "l": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "f": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "b": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "p": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "g": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "j": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "v": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "q": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "w": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "x": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "y": {
+      "wrong": 0,
+      "correct": 0
+  },
+  "z": {
+      "wrong": 0,
+      "correct": 0
+  }
+}
+
+const incrementAnalyticsCount = (key) => (letter) => {
+  let analyticsData = localStorage.getItem('analyticsData');
+
+  // If there is no analytics data set then  we set the default as the data
+  if(!analyticsData) {
+    localStorage.setItem('analyticsData', JSON.stringify(EMPTY_ANALYTICS))
+
+    analyticsData = EMPTY_ANALYTICS;
+  } else {
+    // If it is set we need to parse it
+    analyticsData = JSON.parse(analyticsData)
+  }
+
+  // Increment the wrong or correct count
+  analyticsData[letter][key] = analyticsData[letter][key] + 1;
+
+  // Save the update
+  localStorage.setItem('analyticsData', JSON.stringify(analyticsData))
+}
+
+// Curried (HOC)
+const incrementCorrectCount = incrementAnalyticsCount('correct')
+const incrementWrongCount = incrementAnalyticsCount('wrong')
 
 module.exports.GameSpace = GameSpace;

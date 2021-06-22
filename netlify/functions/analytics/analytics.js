@@ -32,6 +32,7 @@ const handler = async (event, context) => {
     const speechHints = body.speechHints;
     const visualHints = body.visualHints;
     const progressDump = body.progress;
+    const letterData = body.letterData ? JSON.stringify(body.letterData) : null;
     const progressPercent = calculateProgressPercent(progressDump);
     const settingsDump = {
       sound,
@@ -51,74 +52,33 @@ const handler = async (event, context) => {
 
     // Get the userId (or a new one if one isnt given)
     let userIdentifier = getUserIdCookie(event.headers.cookie);
-    const userAggregate = await getAggregateRow(connection, userIdentifier, {
-      speechHints,
-      visualHints,
-      sound,
-    });
+    if (!userIdentifier) userIdentifier = uuidv4();
 
-    // If we are making a new user lets make a new ID
-    // Even if one is passed in we want to set a new one
-    // User with new settings is basically a new user
-    if (!userAggregate) userIdentifier = uuidv4();
+    const { results: [ lastProgressLog ] } = await query(connection, `
+    SELECT settingsDump, dateCreated from progress_log
+    WHERE userIdentifier = ?
+    ORDER BY dateCreated DESC
+    LIMIT 1
+    `, [userIdentifier]);
 
-    // Its a new user so lets insert them
-    if (!userAggregate) {
-      await query(
-        connection,
-        `
-      INSERT INTO user_aggregate 
-      (userIdentifier, progressDump, progressPercent, timePlayed, dateCreated, visualHints, speechHints, sound, settingsDump)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-        [
-          userIdentifier,
-          JSON.stringify(progressDump),
-          progressPercent,
-          timePlayed,
-          new Date(),
-          visualHints,
-          speechHints,
-          sound,
-          JSON.stringify(settingsDump),
-        ]
-      );
-    } else {
-      // If its an existing user lets update them
-      await query(
-        connection,
-        `
-      UPDATE user_aggregate
-      SET
-        progressDump = ?,
-        progressPercent = ?,
-        timePlayed = ?,
-        visualHints = ?,
-        speechHints = ?,
-        sound = ?,
-        settingsDump = ?
-      WHERE userIdentifier = ?;
-    `,
-        [
-          JSON.stringify(progressDump),
-          progressPercent,
-          timePlayed,
-          visualHints,
-          speechHints,
-          sound,
-          JSON.stringify(settingsDump),
-          userIdentifier,
-        ]
-      );
-    }
+    let settingsChanged = false;
+
+    if(lastProgressLog) {
+      const oldSettingsDump = JSON.parse(lastProgressLog.settingsDump);
+      
+      if(oldSettingsDump.sound !== settingsDump.sound) settingsChanged = true;
+      if(oldSettingsDump.speechHints !== settingsDump.speechHints) settingsChanged = true;
+      if(oldSettingsDump.visualHints !== settingsDump.visualHints) settingsChanged = true;
+    } 
+
 
     // We always want to add a progress log
     await query(
       connection,
       `
     INSERT INTO progress_log 
-    (userIdentifier, progressDump, progressPercent, timePlayed, dateCreated, visualHints, speechHints, sound, settingsDump)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (userIdentifier, progressDump, progressPercent, timePlayed, dateCreated, visualHints, speechHints, sound, settingsDump, progressDetail, settingsChanged)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
       [
         userIdentifier,
@@ -130,6 +90,8 @@ const handler = async (event, context) => {
         speechHints,
         sound,
         JSON.stringify(settingsDump),
+        letterData,
+        settingsChanged
       ]
     );
 
@@ -171,32 +133,6 @@ const throwIfUndefinedOrNull = (value, key) => {
   if (value === null || value === undefined) {
     throw new Error("Value not defined: ", key);
   }
-};
-
-// Only selects the row if it fully matches the settings given
-const getAggregateRow = async (
-  currentConnection,
-  userId,
-  { sound, visualHints, speechHints }
-) => {
-  // Bail early if there is no userId
-  if (userId === null) return null;
-
-  const { results } = await query(
-    currentConnection,
-    `
-    SELECT * FROM user_aggregate
-    WHERE userIdentifier = ?
-    AND sound = ?
-    AND visualHints = ? 
-    AND speechHints = ?;
-  `,
-    [userId, sound, visualHints, speechHints]
-  );
-
-  if (results.length === 0) return null;
-
-  return results[0];
 };
 
 // Wrap database query in a promise so we can await it
