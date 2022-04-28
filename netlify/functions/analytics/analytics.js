@@ -16,7 +16,8 @@ const connection = mysql.createConnection({
   database: "morse_learn",
   password: process.env.DB_PASSWORD,
   ssl: {
-    ca: process.env.CA_CERT
+    ca: process.env.CA_CERT,
+    rejectUnauthorized: false
   }
 });
 
