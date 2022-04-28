@@ -10,8 +10,9 @@ const cookie = require("cookie");
 
 // create the connection to database
 const connection = mysql.createConnection({
-  host: "cip-109-107-38-255.gb1.brightbox.com",
-  user: "morse_learn",
+  host: "morse-learn-do-user-1044927-0.b.db.ondigitalocean.com",
+  port: 25060,
+  user: "metric_collector",
   database: "morse_learn",
   password: process.env.DB_PASSWORD,
 });
