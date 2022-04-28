@@ -15,6 +15,9 @@ const connection = mysql.createConnection({
   user: "metric_collector",
   database: "morse_learn",
   password: process.env.DB_PASSWORD,
+  ssl: {
+    ca: process.env.CA_CERT
+  }
 });
 
 const handler = async (event, context) => {
