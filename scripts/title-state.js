@@ -248,39 +248,40 @@ class TitleState {
   }
 
   async sendProgress() {
-    console.log('Sending progress')
+    console.log("Skipping progress sending")
+    // console.log('Sending progress')
 
-    try {
-      const visualHints = getBoolFromLocalStore('have_visual_cues')
-      const sound = getBoolFromLocalStore('have_audio')
-      const speechHints = getBoolFromLocalStore('have_speech_assistive')
-      const progress = localStorage.getItem('savedLetters') || JSON.stringify(EMPTY_PROGRESS);
-      const letterData = localStorage.getItem('analyticsData') || JSON.stringify(EMPTY_ANALYTICS);
-      const timePlayed = parseInt(localStorage.getItem(TIMEKEY))
+    // try {
+    //   const visualHints = getBoolFromLocalStore('have_visual_cues')
+    //   const sound = getBoolFromLocalStore('have_audio')
+    //   const speechHints = getBoolFromLocalStore('have_speech_assistive')
+    //   const progress = localStorage.getItem('savedLetters') || JSON.stringify(EMPTY_PROGRESS);
+    //   const letterData = localStorage.getItem('analyticsData') || JSON.stringify(EMPTY_ANALYTICS);
+    //   const timePlayed = parseInt(localStorage.getItem(TIMEKEY))
 
-      const data = {
-        timePlayed,
-        visualHints,
-        sound,
-        speechHints,
-        progress: JSON.parse(progress),
-        letterData: JSON.parse(letterData)
-      }
+    //   const data = {
+    //     timePlayed,
+    //     visualHints,
+    //     sound,
+    //     speechHints,
+    //     progress: JSON.parse(progress),
+    //     letterData: JSON.parse(letterData)
+    //   }
 
-      await fetch('/.netlify/functions/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
+    //   await fetch('/.netlify/functions/analytics', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify(data),
+    //   })
 
-      console.log('Progress Sent')
-    } catch (e) {
-      // We swallow the error and warn because
-      // collecting analytics shouldn't break the game
-      console.warn(e)
-    }
+    //   console.log('Progress Sent')
+    // } catch (e) {
+    //   // We swallow the error and warn because
+    //   // collecting analytics shouldn't break the game
+    //   console.warn(e)
+    // }
   }
 
   // Clear the current progress
