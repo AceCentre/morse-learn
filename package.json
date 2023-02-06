@@ -38,7 +38,7 @@
   "scripts": {
     "postinstall": "npm run require-fontawesome",
     "browserify": "browserify scripts/app.js -o build/bundle.js",
-    "build": "npm run browserify; npm run sass; npm run uglifycss",
+    "build": "npm run require-fontawesome && npm run browserify; npm run sass; npm run uglifycss",
     "deploy": "npm run build; gcloud app deploy --project=gweb-morse-tts",
     "eslint": "eslint scripts",
     "precommit": "true",
