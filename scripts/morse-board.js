@@ -17,13 +17,13 @@ class MorseBoard {
         189, // -
         173, // -
         75, // k
-        32, // space
+        13, // enter
       ],
       dashSoundPath: "../assets/sounds/dash.mp3",
       dotKeyMap: [
         190, // .
         74, // j
-        13 // enter
+        32 // space
       ],
       dotSoundPath: "../assets/sounds/dot.mp3",
       height: "25vh",
