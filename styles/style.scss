@@ -472,6 +472,32 @@ body {
     visibility: visible;
   }
 
+  button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
   .wrapper {
     color: rgba($black, 0.4);
     font-size: 24px;
