@@ -96,17 +96,21 @@ class Word {
       // Use the letter-specific image from assets/images/final
       // The image keys are lowercase but the actual files are uppercase
       let hint;
+      const hintOffset = config.hints.hintOffset || 120;
+      const hintX = startX + (i * config.app.wordBrickSize);
+      const hintY = config.GLOBALS.worldCenter + hintOffset;
+
       try {
         // First check if the texture exists in the cache
         if (this.game.cache.checkImageKey(name.toLowerCase())) {
-          hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, name.toLowerCase());
+          hint = this.game.add.sprite(hintX, hintY, name.toLowerCase());
         } else {
           console.warn(`Texture for ${name.toLowerCase()} not found in cache, using nohint as fallback`);
-          hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, 'nohint');
+          hint = this.game.add.sprite(hintX, hintY, 'nohint');
         }
       } catch (error) {
         console.warn(`Error creating sprite for ${name.toLowerCase()}, using nohint as fallback:`, error);
-        hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, 'nohint');
+        hint = this.game.add.sprite(hintX, hintY, 'nohint');
       }
 
       hint.anchor.set(0.5, 0);
@@ -185,6 +189,7 @@ class Word {
       if (this.game.have_visual_cues) {
         // Make sure the image is using the correct texture
         const hintImage = this.hints[this.currentLetterIndex].image;
+        const currentLetterObj = this.letterObjects[this.currentLetterIndex];
 
         // Try to load the correct texture if it's not already loaded
         if (hintImage.key !== imageKey) {
@@ -204,6 +209,20 @@ class Word {
 
         // Add a small delay to ensure texture is loaded before showing
         await delay(50);
+
+        // Position the hint image directly under the current letter
+        // First update the x position to match the letter
+        hintImage.position.x = currentLetterObj.position.x;
+
+        // Position the hint image below the letter (with a small offset)
+        const hintOffset = config.hints.hintOffset || 120;
+
+        // If the letter is pushed up, position the hint below it
+        if (this.parent.letterScoreDict[currentLetter] < config.app.LEARNED_THRESHOLD) {
+          hintImage.position.y = config.GLOBALS.worldTop + hintOffset;
+        } else {
+          hintImage.position.y = config.GLOBALS.worldCenter + hintOffset;
+        }
 
         // Show the hint image with increased delay to ensure texture is loaded
         this.game.add.tween(hintImage).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true, 100);
@@ -236,6 +255,14 @@ class Word {
         // Move the letter and pill up when visual cues are enabled
         this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
         this.game.add.tween(this.pills[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+
+        // If this is the current letter, also update the hint image position
+        if (i === this.currentLetterIndex && this.hints[i] && this.hints[i].image) {
+          const hintOffset = config.hints.hintOffset || 120;
+          // Position the hint image below the letter
+          this.hints[i].image.position.x = this.letterObjects[i].position.x;
+          this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldTop + hintOffset }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+        }
       } else {
         // Make sure they stay in the center when visual cues are disabled
         this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldCenter }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
@@ -251,7 +278,12 @@ class Word {
 
     this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldCenter }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
     this.game.add.tween(this.pills[i]).to({ y: config.GLOBALS.worldCenter }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
-    this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldCenter, alpha: 0 }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
+
+    // Update the hint image position to match the letter's x position
+    this.hints[i].image.position.x = this.letterObjects[i].position.x;
+
+    const hintOffset = config.hints.hintOffset || 120;
+    this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldCenter + hintOffset, alpha: 0 }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
     this.game.add.tween(this.hints[i].text).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
     this.game.add.tween(this.hints[i].underline).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
   }

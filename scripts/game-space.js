@@ -484,10 +484,22 @@ class GameSpace {
               true,
               config.animations.SLIDE_END_DELAY
             );
+          // Update both the hint text and the hint image
           this.game.add
-            .tween(hint)
+            .tween(hint.text)
             .to(
               { x: hintX - distBetweenTargetAndNextLetter },
+              config.animations.SLIDE_TRANSITION,
+              Phaser.Easing.Exponential.Out,
+              true,
+              config.animations.SLIDE_END_DELAY
+            );
+
+          // Also update the hint image position to match the letter
+          this.game.add
+            .tween(hint.image)
+            .to(
+              { x: letterX - distBetweenTargetAndNextLetter },
               config.animations.SLIDE_TRANSITION,
               Phaser.Easing.Exponential.Out,
               true,

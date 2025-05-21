@@ -10,3 +10,6 @@ dist*
 # Local Netlify folder
 .netlify
 .env
+
+# DigitalOcean App Platform configuration with sensitive data
+api-service/app-spec.yaml
