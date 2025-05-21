@@ -18,6 +18,7 @@ $black: #000000;
 
 html {
   background: $red;
+  height: 100%;
 }
 
 html,
@@ -28,6 +29,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
   background-color: $red; /* Ensure the red background extends to the bottom */
+  height: 100%;
+  min-height: 100%;
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
@@ -36,6 +39,13 @@ body {
   input {
     font-size: 16px;
   }
+}
+
+/* Ensure the canvas fills the available space */
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .keyboard-hint {
