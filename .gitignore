@@ -5,7 +5,7 @@ yarn-error.log
 node_modules*
 build
 dist*
-.parcel*
+.parcel-cache/*
 
 # Local Netlify folder
 .netlify
