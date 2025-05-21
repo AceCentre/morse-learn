@@ -84,8 +84,8 @@ class GameSpace {
 
     this.morseBoard = new MorseBoard({
       debounce: 2e3,
-      dashSoundPath: "./assets/sounds/dash.mp3",
-      dotSoundPath: "./assets/sounds/dot.mp3",
+      dashSoundPath: window.GameApp.assetPaths.dashSound,
+      dotSoundPath: window.GameApp.assetPaths.dotSound,
       notificationStyle: "output",
       game: this.game,
       onCommit: (e) =>  {

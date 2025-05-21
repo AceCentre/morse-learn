@@ -172,23 +172,20 @@ class App {
 
     // Audio
     this.game.customSoundManager = new SoundManager()
-    // Use relative paths without leading slash to ensure proper loading
-    this.game.customSoundManager.createSound('period', 'assets/sounds/period')
-    this.game.customSoundManager.createSound('dash', 'assets/sounds/dash')
-    this.game.customSoundManager.createSound('dot', 'assets/sounds/dot')
+    // Use assetPaths for loading sounds
+    this.game.customSoundManager.createSound('period', GameApp.assetPaths.periodSound);
+    this.game.customSoundManager.createSound('dash', GameApp.assetPaths.dashSound);
+    this.game.customSoundManager.createSound('dot', GameApp.assetPaths.dotSound);
 
     // Add correct and wrong sounds early to ensure they're loaded
-    this.game.customSoundManager.createSound('correct', 'assets/sounds/correct');
-    this.game.customSoundManager.createSound('wrong', 'assets/sounds/wrong');
+    this.game.customSoundManager.createSound('correct', GameApp.assetPaths.correctSound);
+    this.game.customSoundManager.createSound('wrong', GameApp.assetPaths.wrongSound);
 
     // Add debug logging
     console.log('Sound manager initialized with basic sounds')
 
 
     // letters + soundalike list
-    // Remove leading slash to ensure proper loading
-    let path = 'assets' + GameApp.course.assets;
-
     // First load the nohint image with a special key - MUST be loaded first
     this.game.load.image('nohint', GameApp.assetPaths.nohint);
 
@@ -199,9 +196,6 @@ class App {
       }
     });
 
-    // Force the nohint image to load immediately
-    this.game.load.start();
-
     // Then load the actual letter images from assets/images/final
     for (let letter of GameApp.course.letters) {
       // Use the letter-specific images from assetPaths instead of nohint
@@ -209,8 +203,20 @@ class App {
       this.game.load.image(letter, GameApp.assetPaths[letter]);
 
       // Load the sounds for each letter
-      this.game.customSoundManager.createSound('letter-' + letter, path + 'sounds/' + letter)
-      this.game.customSoundManager.createSound('soundalike-letter-' + letter, path + 'sounds/soundalikes-mw/' + letter)
+      const letterSoundPathKey = 'letter_' + letter + '_sound';
+      const soundalikeMwPathKey = 'soundalike_mw_' + letter + '_sound';
+
+      if (GameApp.assetPaths[letterSoundPathKey]) {
+        this.game.customSoundManager.createSound('letter-' + letter, GameApp.assetPaths[letterSoundPathKey]);
+      } else {
+        console.warn(`Asset path for letter sound ${letterSoundPathKey} not found.`);
+      }
+
+      if (GameApp.assetPaths[soundalikeMwPathKey]) {
+        this.game.customSoundManager.createSound('soundalike-letter-' + letter, GameApp.assetPaths[soundalikeMwPathKey]);
+      } else {
+        console.warn(`Asset path for soundalike_mw ${soundalikeMwPathKey} not found.`);
+      }
     }
 
     // Make sure the images are properly loaded before starting the game
