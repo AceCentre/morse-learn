@@ -27,7 +27,7 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
-
+  background-color: $red; /* Ensure the red background extends to the bottom */
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
