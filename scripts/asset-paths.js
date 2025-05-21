@@ -30,7 +30,7 @@ import letterZ from '../assets/images/final/Z.png';
 import closeIcon from '../assets/images/close.svg';
 import badgeIcon from '../assets/images/badge.svg';
 import introVideo from '../assets/videos/intro.mp4';
-import nohintImage from '../assets/keyboard/images/nohint.png';
+import nohintImage from '../assets/images/nohint.png';
 
 // Create a mapping of asset keys to their resolved paths
 const assetPaths = {

@@ -93,10 +93,35 @@ class Word {
       letter.letter = name;
       this.letterObjects.push(letter);
 
-      let hint = this.game.add.sprite(config.app.wordBrickSize, config.GLOBALS.worldCenter + 50, 'nohint');
+      // Use the letter-specific image from assets/images/final
+      // The image keys are lowercase but the actual files are uppercase
+      let hint;
+      try {
+        // First check if the texture exists in the cache
+        if (this.game.cache.checkImageKey(name.toLowerCase())) {
+          hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, name.toLowerCase());
+        } else {
+          console.warn(`Texture for ${name.toLowerCase()} not found in cache, using nohint as fallback`);
+          hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, 'nohint');
+        }
+      } catch (error) {
+        console.warn(`Error creating sprite for ${name.toLowerCase()}, using nohint as fallback:`, error);
+        hint = this.game.add.sprite(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter + 50, 'nohint');
+      }
+
       hint.anchor.set(0.5, 0);
       hint.scale.set(config.hints.hintSize);
       hint.alpha = 0;
+
+      // Log for debugging
+      console.log(`Creating hint image for letter: ${name.toLowerCase()} at position ${startX + (i * config.app.wordBrickSize)}`);
+
+      // Double-check the texture loaded correctly
+      if (!hint.texture || hint.texture.baseTexture.hasLoaded === false) {
+        console.warn(`Failed to load texture for ${name.toLowerCase()}, using nohint as fallback`);
+        hint.loadTexture('nohint');
+      }
+
 
       // Hint Text
       // Use the letter name directly since we're using the 'nohint' image for all letters
@@ -151,9 +176,41 @@ class Word {
     if (this.hints.length !== 0) {
       await delay(config.animations.SLIDE_END_DELAY + 400);
       console.log('showHint - visual cues enabled:', this.game.have_visual_cues);
+
+      // Get the current letter
+      const currentLetter = this.myLetters[this.currentLetterIndex];
+      const letterName = this.parent.parent.course.getLetterName(currentLetter);
+
+      // Debug the current letter and its image
+      console.log(`Showing hint for letter: ${letterName}`);
+
       if (this.game.have_visual_cues) {
-        // Show the hint image
-        this.game.add.tween(this.hints[this.currentLetterIndex].image).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
+        // Make sure the image is using the correct texture
+        const hintImage = this.hints[this.currentLetterIndex].image;
+
+        // Try to load the correct texture if it's not already loaded
+        if (hintImage.key !== letterName.toLowerCase()) {
+          try {
+            console.log(`Attempting to load texture for: ${letterName.toLowerCase()}`);
+
+            // First check if the texture exists in the cache
+            if (this.game.cache.checkImageKey(letterName.toLowerCase())) {
+              hintImage.loadTexture(letterName.toLowerCase());
+            } else {
+              console.warn(`Texture for ${letterName.toLowerCase()} not found in cache, using nohint as fallback`);
+              hintImage.loadTexture('nohint');
+            }
+          } catch (error) {
+            console.warn(`Failed to load texture for ${letterName.toLowerCase()}, using nohint as fallback:`, error);
+            hintImage.loadTexture('nohint');
+          }
+        }
+
+        // Add a small delay to ensure texture is loaded before showing
+        await delay(50);
+
+        // Show the hint image with increased delay to ensure texture is loaded
+        this.game.add.tween(hintImage).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true, 100);
 
         // Also show the hint text and underline for better visibility
         this.game.add.tween(this.hints[this.currentLetterIndex].text).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);

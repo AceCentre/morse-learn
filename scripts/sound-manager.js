@@ -16,13 +16,41 @@ class SoundManager {
 
   playSound(name) {
     try {
-      // Stop the sound first to prevent AbortError
-      this.stopSound(name);
-      // Then play it
-      this.sounds[name].play();
+      // Only play if the sound exists
+      if (this.sounds[name]) {
+        console.log(`Playing sound: ${name}`);
+
+        // Stop any currently playing instance of this sound
+        this.sounds[name].stop();
+
+        // Add a longer delay before playing to avoid interruption issues
+        setTimeout(() => {
+          try {
+            // Create a new instance of the sound with error handling
+            const sound = this.sounds[name].play();
+
+            // Handle any errors that might occur during playback
+            this.sounds[name].once('playerror', (id, err) => {
+              console.warn(`Error playing sound ${name}:`, err);
+            });
+
+            // Add a load event handler to ensure the sound is fully loaded
+            this.sounds[name].once('load', () => {
+              console.log(`Sound ${name} loaded successfully`);
+            });
+          } catch (playError) {
+            console.warn(`Error playing sound ${name} after delay:`, playError);
+          }
+        }, 100); // Increased delay to 100ms
+
+        return true;
+      } else {
+        console.warn(`Sound ${name} not found in sound manager`);
+      }
     } catch (error) {
       console.warn(`Error playing sound ${name}:`, error);
     }
+    return null;
   }
 
   soundDuration(name) {
@@ -33,6 +61,7 @@ class SoundManager {
   stopSound(name) {
     try {
       if (this.sounds[name]) {
+        console.log(`Stopping sound: ${name}`);
         this.sounds[name].stop();
       }
     } catch (error) {

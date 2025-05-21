@@ -20,13 +20,11 @@
     "> 0.5%"
   ],
   "scripts": {
-    "postinstall": "npm run require-fontawesome",
     "build": "parcel build index.html --public-url ./",
     "deploy": "npm run build; gcloud app deploy --project=gweb-morse-tts",
     "eslint": "eslint scripts",
     "precommit": "true",
     "_precommit": "npm run eslint",
-    "require-fontawesome": "cp -r ./node_modules/@fortawesome/fontawesome-free/scss/* styles/fontawesome/ && cp -r ./node_modules/@fortawesome/fontawesome-free/webfonts .",
     "start": "parcel index.html --open",
     "create-db": "docker run --name morse-learn-db -e MYSQL_ROOT_PASSWORD=root -d mysql/mysql-server",
     "teardown-db": "docker container stop morse-learn-db && docker container rm morse-learn-db"
