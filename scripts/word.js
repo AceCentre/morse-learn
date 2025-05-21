@@ -180,28 +180,24 @@ class Word {
       // Get the current letter
       const currentLetter = this.myLetters[this.currentLetterIndex];
       const letterName = this.parent.parent.course.getLetterName(currentLetter);
-
-      // Debug the current letter and its image
-      console.log(`Showing hint for letter: ${letterName}`);
+      const imageKey = letterName.toLowerCase();
 
       if (this.game.have_visual_cues) {
         // Make sure the image is using the correct texture
         const hintImage = this.hints[this.currentLetterIndex].image;
 
         // Try to load the correct texture if it's not already loaded
-        if (hintImage.key !== letterName.toLowerCase()) {
+        if (hintImage.key !== imageKey) {
           try {
-            console.log(`Attempting to load texture for: ${letterName.toLowerCase()}`);
-
             // First check if the texture exists in the cache
-            if (this.game.cache.checkImageKey(letterName.toLowerCase())) {
-              hintImage.loadTexture(letterName.toLowerCase());
+            if (this.game.cache.checkImageKey(imageKey)) {
+              hintImage.loadTexture(imageKey);
             } else {
-              console.warn(`Texture for ${letterName.toLowerCase()} not found in cache, using nohint as fallback`);
+              console.warn(`Texture for ${imageKey} not found in cache, using nohint as fallback`);
               hintImage.loadTexture('nohint');
             }
           } catch (error) {
-            console.warn(`Failed to load texture for ${letterName.toLowerCase()}, using nohint as fallback:`, error);
+            console.warn(`Failed to load texture for ${imageKey}, using nohint as fallback:`, error);
             hintImage.loadTexture('nohint');
           }
         }
