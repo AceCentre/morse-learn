@@ -1,10 +1,5 @@
-$fa-font-path: "../webfonts";
-@import "./fontawesome/fontawesome.scss";
-@import "./fontawesome/solid.scss";
-@import "./fontawesome/regular.scss";
-
-// spinkit
-@import "../node_modules/spinkit/spinkit";
+// spinkit - using @use instead of @import
+@use "../node_modules/spinkit/spinkit";
 
 :root {
   --sk-size: 100px;
@@ -46,6 +41,10 @@ body {
 .keyboard-controls {
   position: absolute;
   padding: 16px;
+}
+
+.keyboard-controls.hidden {
+  display: none;
 }
 
 @media (max-width: 900px) {
@@ -147,6 +146,10 @@ body {
   left: 0px;
   position: fixed;
   width: 100%;
+
+  &.hidden {
+    display: none !important;
+  }
 }
 
 

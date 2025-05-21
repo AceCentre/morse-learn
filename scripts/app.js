@@ -172,21 +172,43 @@ class App {
 
     // Audio
     this.game.customSoundManager = new SoundManager()
-    this.game.customSoundManager.createSound('period', '/assets/sounds/period')
-    this.game.customSoundManager.createSound('dash', '/assets/sounds/dash')
-    this.game.customSoundManager.createSound('dot', '/assets/sounds/dot')
+    // Use relative paths without leading slash to ensure proper loading
+    this.game.customSoundManager.createSound('period', 'assets/sounds/period')
+    this.game.customSoundManager.createSound('dash', 'assets/sounds/dash')
+    this.game.customSoundManager.createSound('dot', 'assets/sounds/dot')
+
+    // Add correct and wrong sounds early to ensure they're loaded
+    this.game.customSoundManager.createSound('correct', 'assets/sounds/correct');
+    this.game.customSoundManager.createSound('wrong', 'assets/sounds/wrong');
+
+    // Add debug logging
+    console.log('Sound manager initialized with basic sounds')
 
 
     // letters + soundalike list
-    let path = '/assets' + GameApp.course.assets;
+    // Remove leading slash to ensure proper loading
+    let path = 'assets' + GameApp.course.assets;
 
-    // First load the nohint image with a special key
+    // First load the nohint image with a special key - MUST be loaded first
     this.game.load.image('nohint', GameApp.assetPaths.nohint);
 
-    // Then create a texture for each letter that points to the same image
+    // Make sure the nohint image is loaded before proceeding
+    this.game.load.onFileComplete.add((progress, cacheKey) => {
+      if (cacheKey === 'nohint') {
+        console.log('nohint image loaded successfully');
+      }
+    });
+
+    // Force the nohint image to load immediately
+    this.game.load.start();
+
+    // Then load the actual letter images from assets/images/final
     for (let letter of GameApp.course.letters) {
-      // Create a reference to the nohint image for each letter
-      this.game.load.image(letter, GameApp.assetPaths.nohint);
+      // Use the letter-specific images from assetPaths instead of nohint
+      console.log(`Loading image for letter: ${letter} from path: ${GameApp.assetPaths[letter]}`);
+      this.game.load.image(letter, GameApp.assetPaths[letter]);
+
+      // Load the sounds for each letter
       this.game.customSoundManager.createSound('letter-' + letter, path + 'sounds/' + letter)
       this.game.customSoundManager.createSound('soundalike-letter-' + letter, path + 'sounds/soundalikes-mw/' + letter)
     }
@@ -195,9 +217,8 @@ class App {
     this.game.load.onLoadComplete.add(() => {
       console.log("All assets loaded successfully");
     });
-    // correct, wrong
-    this.game.customSoundManager.createSound('correct', '/assets/sounds/correct');
-    this.game.customSoundManager.createSound('wrong', '/assets/sounds/wrong');
+
+    console.log('All sound files loaded');
   }
 
   // Show about modal

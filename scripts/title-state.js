@@ -139,6 +139,7 @@ class TitleState {
     let visualToggle = document.querySelector(".visual-toggle");
     let trackingToggle = document.querySelector(".consent-toggle");
     let statsButton = document.querySelector(".stats-button");
+    let keyboardToggle = document.querySelector(".keyboard-toggle");
 
     // Make the display match the initial state
     audioToggle.classList.add(initialAudio ? 'noop' : 'disabled')
@@ -272,6 +273,44 @@ class TitleState {
     }
 
     statsButton.addEventListener('click', onStatsClick, true);
+
+    // Add keyboard controls toggle handler
+    const onKeyboardToggle = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const morseBoard = document.getElementById('morseboard');
+      if (morseBoard) {
+        morseBoard.classList.toggle('hidden');
+
+        // Store preference in localStorage
+        const isHidden = morseBoard.classList.contains('hidden');
+        localStorage.setItem('morseboard_hidden', isHidden);
+
+        // Update toggle button appearance
+        keyboardToggle.classList[isHidden ? "add" : "remove"]("disabled");
+
+        // Adjust the game canvas height when the morse board is hidden/shown
+        if (this.game && this.game.scale) {
+          // Give a small delay to allow the DOM to update
+          setTimeout(() => {
+            this.game.scale.setGameSize(this.game.width, this.game.height);
+            // Force a resize event to update the layout
+            window.dispatchEvent(new Event('resize'));
+          }, 100);
+        }
+      }
+    };
+
+    // Initialize morse board visibility from localStorage
+    const morseBoardHidden = getBoolFromLocalStore('morseboard_hidden');
+    const morseBoard = document.getElementById('morseboard');
+    if (morseBoardHidden && morseBoard) {
+      morseBoard.classList.add('hidden');
+      keyboardToggle.classList.add('disabled');
+    }
+
+    keyboardToggle.addEventListener('click', onKeyboardToggle, true);
 
     // Send progress to the server every
     // 60 seconds if consent is turned on
