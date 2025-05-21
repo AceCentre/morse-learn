@@ -23,7 +23,6 @@ class MorseBoard {
       dotKeyMap: [
         190, // .
         74, // j
-        32 // space
       ],
       dotSoundPath: "../assets/sounds/dot.mp3",
       height: "25vh",
@@ -100,22 +99,30 @@ class MorseBoard {
       this.config.dashKeyMap.indexOf(code) > -1
     ) {
       this.dashButton.click();
+    } else if (code === 32) { // Space key for immediate commit
+      this.commitCurrentSequence();
     }
+  }
 
-    // if (code === 13 && !this.config.autoCommit) {
-    //   if (this.output.value && this.output.value !== null) {
-    //     this.output.dispatchEvent(
-    //       new CustomEvent("commit", {
-    //         detail: {
-    //           symbol: this.output.value,
-    //           letter: this.morseDictionary[this.output.value],
-    //         },
-    //       })
-    //     );
-    //   } else {
-    //     this.showNotification(null, true);
-    //   }
-    // }
+  commitCurrentSequence() {
+    // Clear any existing timeout
+    clearTimeout(this.timeout);
+
+    // Only commit if there's a value in the output
+    if (this.output.value && this.output.value !== null) {
+      var eventDetail = {
+        symbol: this.output.value,
+        letter: this.morseDictionary[this.output.value],
+      };
+
+      if (this.config.autoCommit) {
+        this.output.dispatchEvent(
+          new CustomEvent("commit", {
+            detail: eventDetail,
+          })
+        );
+      }
+    }
   }
 
   onClick(e) {
