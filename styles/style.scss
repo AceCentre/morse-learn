@@ -13,6 +13,7 @@ $fa-font-path: "../webfonts";
 
 $beige: #f1e4d4;
 $red: #ef4136;
+$green: #00a651;
 $black: #000000;
 
 * {
@@ -445,5 +446,64 @@ body {
   p.strong {
     margin: 32px 0;
     font-weight: bold;
+  }
+}
+
+// Statistics overlay
+#statistics-overlay {
+  background-color: $green;
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  overflow-y: scroll;
+  position: absolute;
+  top: 0;
+  transition: all 0.5s;
+  width: 100%;
+  visibility: hidden;
+  -webkit-overflow-scrolling: scroll;
+  z-index: 2;
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .wrapper {
+    color: rgba($black, 0.4);
+    font-size: 24px;
+    margin: 15% auto 0;
+    max-width: 85%;
+    padding-bottom: 50px;
+
+    @media only screen and (-webkit-min-device-pixel-ratio: 3) {
+      font-size: 40px;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      color: rgba($black, 0.7);
+      font-size: 0.8em;
+
+      @media (max-width: 600px) {
+        font-size: 0.7em;
+      }
+
+      th, td {
+        padding: 10px;
+        text-align: left;
+      }
+
+      th {
+        border-bottom: 2px solid rgba($black, 0.2);
+        font-weight: bold;
+      }
+
+      td {
+        border-bottom: 1px solid rgba($black, 0.1);
+      }
+    }
   }
 }

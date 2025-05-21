@@ -20,7 +20,7 @@ const TRACKING_ALLOWED_KEY = 'isTrackingAllowed';
 
 /**
  * Localstorage stores booleans as strings so we
- * cast them to real bools here 
+ * cast them to real bools here
  */
 const getBoolFromLocalStore = (key) => {
   const result = localStorage.getItem(key)
@@ -58,7 +58,7 @@ class TitleState {
       const consentModal = document.getElementById('consent-modal');
       const innerModal = document.getElementById('inner-modal')
       consentModal.focus()
-      
+
       if(this.game.device.iPhone) consentModal.style.alignItems = 'flex-start';
       if(this.game.device.iPhone) innerModal.style.maxHeight = '70vh';
 
@@ -102,7 +102,7 @@ class TitleState {
         cb()
       })
     }
-    
+
   }
 
   setupListeners() {
@@ -138,6 +138,7 @@ class TitleState {
     let speechToggle = document.querySelector(".speech-toggle");
     let visualToggle = document.querySelector(".visual-toggle");
     let trackingToggle = document.querySelector(".consent-toggle");
+    let statsButton = document.querySelector(".stats-button");
 
     // Make the display match the initial state
     audioToggle.classList.add(initialAudio ? 'noop' : 'disabled')
@@ -157,6 +158,11 @@ class TitleState {
       this.game.have_audio = this.have_audio;
       this.game.have_speech_assistive = this.have_speech_assistive;
       this.game.have_visual_cues = this.have_visual_cues;
+      console.log('Game starting with settings:', {
+        audio: this.game.have_audio,
+        speech: this.game.have_speech_assistive,
+        visualCues: this.game.have_visual_cues
+      });
       this.start();
       this.hasStarted = true;
 
@@ -210,8 +216,28 @@ class TitleState {
       this.have_visual_cues = !this.have_visual_cues;
       this.game.have_visual_cues = this.have_visual_cues;
       const action = this.have_visual_cues ? "remove" : "add";
-      localStorage.setItem('have_visual_cues', this.have_visual_cues)
+      localStorage.setItem('have_visual_cues', this.have_visual_cues);
       visualToggle.classList[action]("disabled");
+      console.log('Visual cues toggled:', this.have_visual_cues);
+
+      // Force update of current game state if game has started
+      if (this.hasStarted && this.game.state.current === 'game') {
+        // Update the game state to reflect the new setting
+        const gameState = this.game.state.states.game;
+        if (gameState && gameState.gameSpace) {
+          // Force redraw of current word if needed
+          const currentWord = gameState.gameSpace.currentWords[gameState.gameSpace.currentWordIndex];
+          if (currentWord) {
+            const letterIndex = currentWord.currentLetterIndex;
+            if (this.have_visual_cues) {
+              currentWord.pushUp(letterIndex);
+            } else {
+              // Reset position if visual cues are disabled
+              currentWord.pushDown(letterIndex);
+            }
+          }
+        }
+      }
     };
     visualToggle.addEventListener("click", onVisualToggle, true);
 
@@ -237,11 +263,21 @@ class TitleState {
 
     resetButton.addEventListener('click', onReset, true)
 
+    // Add statistics button handler
+    const onStatsClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.showStatistics();
+    }
+
+    statsButton.addEventListener('click', onStatsClick, true);
+
     // Send progress to the server every
     // 60 seconds if consent is turned on
     const SEND_PROGRESS_INTERVAL = 30 * 1000;
     setInterval(() => {
-      const consented = getBoolFromLocalStore(TRACKING_ALLOWED_KEY) 
+      const consented = getBoolFromLocalStore(TRACKING_ALLOWED_KEY)
 
       if(consented) this.sendProgress()
     }, SEND_PROGRESS_INTERVAL)
@@ -432,6 +468,170 @@ class TitleState {
         );
       });
     }
+  }
+
+  // Show statistics overlay
+  showStatistics() {
+    // Create a statistics overlay similar to the about overlay
+    const existingOverlay = document.getElementById('statistics-overlay');
+    if (existingOverlay) {
+      document.body.removeChild(existingOverlay);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'statistics-overlay';
+    overlay.className = 'open';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'wrapper';
+
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = 'Your Learning Statistics';
+
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = `<img src="${window.GameApp.assetPaths.close}">`;
+    closeButton.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      z-index: 3;
+    `;
+    closeButton.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+    });
+
+    // Create statistics content
+    const statsContent = this.createStatisticsContent();
+
+    wrapper.appendChild(title);
+    wrapper.appendChild(statsContent);
+    overlay.appendChild(wrapper);
+    overlay.appendChild(closeButton);
+    document.body.appendChild(overlay);
+  }
+
+  // Create statistics content
+  createStatisticsContent() {
+    const container = document.createElement('div');
+
+    // Get analytics data from localStorage
+    let analyticsData = null;
+    const storedData = localStorage.getItem('analyticsData');
+    analyticsData = storedData ? JSON.parse(storedData) : null;
+
+    if (!analyticsData) {
+      const noData = document.createElement('p');
+      noData.textContent = 'No detailed statistics available yet. Start playing to generate statistics.';
+      container.appendChild(noData);
+      return container;
+    }
+
+    // Create a summary paragraph
+    const summary = document.createElement('p');
+    const totalLetters = this.lettersToLearn.length;
+    const learnedLetters = Object.keys(this.letterScoreDict).filter(
+      key => this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD
+    ).length;
+
+    summary.textContent = `You've mastered ${learnedLetters} out of ${totalLetters} letters. Here's a breakdown of your progress:`;
+    container.appendChild(summary);
+
+    // Create a table for letter statistics
+    const table = document.createElement('table');
+    table.style.cssText = `
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      color: rgba(0, 0, 0, 0.7);
+    `;
+
+    // Create table header
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['Letter', 'Status', 'Correct', 'Wrong', 'Accuracy'].forEach(text => {
+      const th = document.createElement('th');
+      th.textContent = text;
+      th.style.cssText = `
+        padding: 10px;
+        text-align: left;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+      `;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Create table body
+    const tbody = document.createElement('tbody');
+
+    // Sort letters alphabetically
+    const sortedLetters = Object.keys(analyticsData).sort();
+
+    sortedLetters.forEach(letter => {
+      const row = document.createElement('tr');
+
+      // Letter cell
+      const letterCell = document.createElement('td');
+      letterCell.textContent = letter.toUpperCase();
+      letterCell.style.cssText = `
+        padding: 10px;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      `;
+
+      // Status cell
+      const statusCell = document.createElement('td');
+      const isLearned = this.letterScoreDict[letter] >= config.app.LEARNED_THRESHOLD;
+      statusCell.textContent = isLearned ? 'Learned' : 'Learning';
+      statusCell.style.cssText = `
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        color: ${isLearned ? '#00a651' : '#ef4136'};
+      `;
+
+      // Correct cell
+      const correctCell = document.createElement('td');
+      correctCell.textContent = analyticsData[letter].correct;
+      correctCell.style.cssText = `
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      `;
+
+      // Wrong cell
+      const wrongCell = document.createElement('td');
+      wrongCell.textContent = analyticsData[letter].wrong;
+      wrongCell.style.cssText = `
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      `;
+
+      // Accuracy cell
+      const accuracyCell = document.createElement('td');
+      const total = analyticsData[letter].correct + analyticsData[letter].wrong;
+      const accuracy = total > 0 ? Math.round((analyticsData[letter].correct / total) * 100) : 0;
+      accuracyCell.textContent = `${accuracy}%`;
+      accuracyCell.style.cssText = `
+        padding: 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      `;
+
+      row.appendChild(letterCell);
+      row.appendChild(statusCell);
+      row.appendChild(correctCell);
+      row.appendChild(wrongCell);
+      row.appendChild(accuracyCell);
+
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+    container.appendChild(table);
+
+    return container;
   }
 }
 

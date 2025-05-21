@@ -13,7 +13,10 @@
 // limitations under the License.
 
 const config = require('./config');
-const delay = require('delay');
+// Create our own delay function using setTimeout
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 class Word {
 
@@ -90,14 +93,14 @@ class Word {
       letter.letter = name;
       this.letterObjects.push(letter);
 
-      let hint = this.game.add.sprite(config.app.wordBrickSize, config.GLOBALS.worldCenter + 50, 'e');
-      hint.loadTexture(name);
+      let hint = this.game.add.sprite(config.app.wordBrickSize, config.GLOBALS.worldCenter + 50, 'nohint');
       hint.anchor.set(0.5, 0);
       hint.scale.set(config.hints.hintSize);
       hint.alpha = 0;
 
       // Hint Text
-      let hintName = hint.frameName.substr(hint.frameName.lastIndexOf('/') + 1).split('.')[0];
+      // Use the letter name directly since we're using the 'nohint' image for all letters
+      let hintName = name;
       let hintText = this.game.add.text(config.app.wordBrickSize, config.GLOBALS.worldBottom - 10, hintName);
       hintText.font = config.typography.font;
       hintText.fontSize = config.hints.hintTextSize;
@@ -147,8 +150,19 @@ class Word {
   async showHint() {
     if (this.hints.length !== 0) {
       await delay(config.animations.SLIDE_END_DELAY + 400);
+      console.log('showHint - visual cues enabled:', this.game.have_visual_cues);
       if (this.game.have_visual_cues) {
+        // Show the hint image
         this.game.add.tween(this.hints[this.currentLetterIndex].image).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
+
+        // Also show the hint text and underline for better visibility
+        this.game.add.tween(this.hints[this.currentLetterIndex].text).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
+        this.game.add.tween(this.hints[this.currentLetterIndex].underline).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
+      } else {
+        // Make sure hints are hidden when visual cues are disabled
+        this.game.add.tween(this.hints[this.currentLetterIndex].image).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
+        this.game.add.tween(this.hints[this.currentLetterIndex].text).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
+        this.game.add.tween(this.hints[this.currentLetterIndex].underline).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
       }
     }
   }
@@ -163,9 +177,17 @@ class Word {
   }
 
   pushUp(i) {
-    if (this.parent.letterScoreDict[this.myLetters[i]] < config.app.LEARNED_THRESHOLD && this.game.have_visual_cues) {
-      this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
-      this.game.add.tween(this.pills[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+    console.log('pushUp - visual cues enabled:', this.game.have_visual_cues);
+    if (this.parent.letterScoreDict[this.myLetters[i]] < config.app.LEARNED_THRESHOLD) {
+      if (this.game.have_visual_cues) {
+        // Move the letter and pill up when visual cues are enabled
+        this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+        this.game.add.tween(this.pills[i]).to({ y: config.GLOBALS.worldTop }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+      } else {
+        // Make sure they stay in the center when visual cues are disabled
+        this.game.add.tween(this.letterObjects[i]).to({ y: config.GLOBALS.worldCenter }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+        this.game.add.tween(this.pills[i]).to({ y: config.GLOBALS.worldCenter }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+      }
     }
   }
 
