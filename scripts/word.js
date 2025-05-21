@@ -49,7 +49,17 @@ class Word {
   setPosition(startX) {
     let rect = this.game.add.graphics(0, 0);
     rect.beginFill(this.myColor);
-    rect.drawRect(startX - config.app.wordBrickSize, 0, (config.app.wordBrickSize * this.myLetters.length) + (config.app.wordBrickSize * 2), 5000);
+
+    // Calculate the width of the background
+    const bgWidth = (config.app.wordBrickSize * this.myLetters.length) + (config.app.wordBrickSize * 2);
+
+    // For single letters, center the background around the startX position
+    if (this.myLetters.length === 1) {
+      rect.drawRect(startX - (bgWidth / 2), 0, bgWidth, 5000);
+    } else {
+      rect.drawRect(startX - config.app.wordBrickSize, 0, bgWidth, 5000);
+    }
+
     rect.endFill();
     this.myStartX = startX;
     this.background = rect;
@@ -63,7 +73,15 @@ class Word {
       // Circle pill
       circle.beginFill(0x000000, 1);
       circle.drawCircle(0, 0, config.app.wordBrickSize);
-      circle.position.x = startX + (i * config.app.wordBrickSize);
+
+      // For single letters, center the letter at the startX position
+      // For multiple letters, position them relative to startX
+      if (this.myLetters.length === 1) {
+        circle.position.x = startX;
+      } else {
+        circle.position.x = startX + (i * config.app.wordBrickSize);
+      }
+
       circle.position.y = config.GLOBALS.worldCenter;
       circle.alpha = 0.4;
       circle.scale.x = 0;
@@ -81,7 +99,16 @@ class Word {
        * @property {string} morse - The letter in Morse code.
        */
       let name = this.parent.parent.course.getLetterName(this.myLetters[i]);
-      let letter = this.game.add.text(startX + (i * config.app.wordBrickSize), config.GLOBALS.worldCenter, name.toUpperCase());
+
+      // Use the same positioning logic as for the pills
+      let letterX;
+      if (this.myLetters.length === 1) {
+        letterX = startX;
+      } else {
+        letterX = startX + (i * config.app.wordBrickSize);
+      }
+
+      let letter = this.game.add.text(letterX, config.GLOBALS.worldCenter, name.toUpperCase());
       letter.font = config.typography.font;
       letter.fontWeight = 600;
       letter.fontSize = config.app.wordLetterSize;
@@ -97,7 +124,15 @@ class Word {
       // The image keys are lowercase but the actual files are uppercase
       let hint;
       const hintOffset = config.hints.hintOffset || 120;
-      const hintX = startX + (i * config.app.wordBrickSize);
+
+      // Use the same positioning logic as for the letters
+      let hintX;
+      if (this.myLetters.length === 1) {
+        hintX = startX;
+      } else {
+        hintX = startX + (i * config.app.wordBrickSize);
+      }
+
       const hintY = config.GLOBALS.worldCenter + hintOffset;
 
       try {

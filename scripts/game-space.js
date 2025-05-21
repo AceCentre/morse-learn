@@ -37,6 +37,25 @@ class GameSpace {
     this.allBgColorsString = ["#ef4136", "#f7941e", "#662d91", "#00a651"];
   }
 
+  // Update the word backgrounds to mute non-current words
+  updateWordBackgrounds() {
+    for (let i = 0; i < this.currentWords.length; i++) {
+      const word = this.currentWords[i];
+      const isCurrentWord = i === this.currentWordIndex;
+
+      // Apply a tint to mute the colors of non-current words
+      if (word.background) {
+        if (isCurrentWord) {
+          // Current word - full brightness
+          word.background.tint = 0xFFFFFF; // No tint (full color)
+        } else {
+          // Non-current word - muted colors
+          word.background.tint = 0xAAAAAA; // Slight gray tint to mute the color
+        }
+      }
+    }
+  }
+
   findAWord() {
     const shuffled = _.shuffle(this.parent.course.words);
     const newestLetter = this.currentLettersInPlay[
@@ -116,7 +135,13 @@ class GameSpace {
   async createFirstWord() {
     let word = this.currentWords[0];
     let letter = word.myLetters[word.currentLetterIndex];
-    word.setPosition(config.app.wordBrickSize);
+
+    // Position the first word in the center of the screen
+    const centerX = this.game.world.centerX;
+    word.setPosition(centerX);
+
+    // Update word backgrounds to highlight the current word
+    this.updateWordBackgrounds();
 
     // Animate stuff immediately when first starting
     this.game.add
@@ -228,9 +253,12 @@ class GameSpace {
   addAWord() {
     this.makeWordObject();
     let priorIndex = this.currentWords.length - 2;
+
+    // Calculate position for the new word based on the last letter of the previous word
+    let lastLetterIndex = this.currentWords[priorIndex].myLetters.length - 1;
     let myStartX =
-      this.currentWords[priorIndex].letterObjects[0].position.x +
-      this.currentWords[priorIndex].myLength * config.app.wordBrickSize +
+      this.currentWords[priorIndex].letterObjects[lastLetterIndex].position.x +
+      config.app.wordBrickSize +
       config.app.spaceBetweenWords;
 
     this.currentWords[this.currentWords.length - 1].setPosition(myStartX);
@@ -302,6 +330,9 @@ class GameSpace {
         if (this.currentWordIndex > this.currentWords.length - 2) {
           this.addAWord();
         }
+
+        // Update word backgrounds to highlight the current word
+        this.updateWordBackgrounds();
       }
 
       word = this.currentWords[this.currentWordIndex];
@@ -460,7 +491,7 @@ class GameSpace {
     return new Promise((resolve) => {
       const word = this.currentWords[this.currentWordIndex];
       const letterObject = word.letterObjects[word.currentLetterIndex];
-      const target = config.app.wordBrickSize;
+      const target = this.game.world.centerX;
       const distBetweenTargetAndNextLetter = letterObject.position.x - target;
 
       for (let w = 0; w < this.currentWords.length; w++) {
