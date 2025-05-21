@@ -15,7 +15,14 @@ class SoundManager {
   }
 
   playSound(name) {
-    this.sounds[name].play();
+    try {
+      // Stop the sound first to prevent AbortError
+      this.stopSound(name);
+      // Then play it
+      this.sounds[name].play();
+    } catch (error) {
+      console.warn(`Error playing sound ${name}:`, error);
+    }
   }
 
   soundDuration(name) {
@@ -24,7 +31,13 @@ class SoundManager {
   }
 
   stopSound(name) {
-    this.sounds[name].stop();
+    try {
+      if (this.sounds[name]) {
+        this.sounds[name].stop();
+      }
+    } catch (error) {
+      console.warn(`Error stopping sound ${name}:`, error);
+    }
   }
 }
 

@@ -4,6 +4,8 @@
 yarn-error.log
 node_modules*
 build
+dist*
+.parcel*
 
 # Local Netlify folder
 .netlify

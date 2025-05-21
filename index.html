@@ -22,13 +22,13 @@
 <meta property="twitter:title" content="Learn Morse Code | Ace Centre">
 <meta property="twitter:description" content="Morse Code is a useful tool to help people access technology. Play our game to see how quickly you can learn Morse Code with help from our visual and phonetic hints!">
 <meta property="twitter:image" content="https://morse-learn.acecentre.net/assets/images/meta.png">
-    
-    
+
+
     <meta
       name="viewport"
       content="width=device-width, user-scalable=yes">
 
-    <link rel="stylesheet" href="build/style.css" />
+    <link rel="stylesheet" href="styles/style.scss" />
     <link rel="icon" href="assets/images/favicon.png" />
     <link
       href="https://fonts.googleapis.com/css?family=Poppins:600,700"
@@ -56,6 +56,9 @@
       >
       <a href title="Tracking Consent" class="item consent-toggle"
       ><i class="fa fa-2x fa-binoculars"></i><span>Tracking Consent</span></a
+    >
+      <a href title="View Statistics" class="item stats-button"
+      ><i class="fa fa-2x fa-chart-bar"></i><span>View Statistics</span></a
     >
     </div>
     <div id="overlay">
@@ -96,7 +99,7 @@
       </div>
     </div>
     <script src="third-party/phaser/phaser.js"></script>
-    <script src="build/bundle.js"></script>
+    <script type="module" src="scripts/app.js"></script>
 
     <div id="morseboard" data-children-count="1">
       <input id="output" readonly="true" tabindex="-1" />
