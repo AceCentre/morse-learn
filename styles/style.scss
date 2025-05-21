@@ -38,25 +38,44 @@ body {
   }
 }
 
-.keyboard-controls {
-  position: absolute;
-  padding: 16px;
+.keyboard-hint {
+  width: 100%;
+  text-align: center;
+  padding: 5px 0;
+  margin-bottom: 5px;
+
+  .key-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+
+    span {
+      margin: 0 10px;
+      font-size: 14px;
+      color: #333;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  }
 }
 
-.keyboard-controls.hidden {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .keyboard-controls {
-    display: none;
+@media (max-width: 600px) {
+  .keyboard-hint {
+    .key-row {
+      span {
+        font-size: 12px;
+        margin: 0 5px;
+      }
+    }
   }
 }
 
 .button-container {
   width: 100%;
-  height: 100%;
-  margin-bottom: 32px;
+  height: calc(100% - 30px);
+  display: flex;
+  flex-direction: column;
 }
 
 #dash {
@@ -68,7 +87,7 @@ body {
   align-items: center;
   display: flex;
   justify-content: center;
-  height: 100%;
+  height: 90%;
   font-size: 7vh;
   outline: none;
   width: 100%;
@@ -91,7 +110,7 @@ body {
   box-shadow: rgb(161, 162, 162) 0px 4px 0px;
   display: flex;
   justify-content: center;
-  height: 100%;
+  height: 90%;
   font-size: 7vh;
   outline: none;
   width: 100%;
@@ -108,31 +127,32 @@ body {
 
 #button-box {
   background: rgb(230, 231, 232);
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   display: flex;
-  height: 100%;
-  padding: 15px 20px 25px;
+  flex: 1;
+  padding: 10px 20px 15px;
   gap: 1rem;
   max-width: 500px;
   margin: 0 auto;
+  width: 100%;
 }
 
 #output {
   appearance: none;
   background: rgb(230, 231, 232);
   border: none;
-  bottom: 25vh;
   color: rgb(35, 31, 32);
   font-size: 4vh;
   font-weight: 700;
-  padding: 5px 0px 0px;
+  padding: 10px 0;
   text-align: center;
   text-transform: uppercase;
   width: 100%;
   visibility: visible;
   vertical-align: middle;
   pointer-events: auto;
+  height: 30px;
 }
 
 #morseboard {
@@ -141,8 +161,9 @@ body {
   bottom: 0px;
   display: none;
   flex-direction: column;
-  height: 25vh;
-  min-height: 227px;
+  height: 20vh;
+  min-height: 180px;
+  max-height: 220px;
   left: 0px;
   position: fixed;
   width: 100%;
@@ -161,6 +182,8 @@ body {
   height: 100%;
   flex-grow: 1;
   flex-basis: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .key-container {
@@ -185,7 +208,10 @@ body {
 .keybutton.longkey {
   width: auto;
   font-size: 16px;
-  padding: 0 4px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // Fallback for landscape
