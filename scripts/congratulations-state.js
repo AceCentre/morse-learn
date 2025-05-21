@@ -251,20 +251,7 @@ class CongratulationsState {
     const overlay = document.createElement('div');
     overlay.id = 'statistics-overlay';
     overlay.className = 'open';
-    overlay.style.cssText = `
-      background-color: #00a651;
-      height: 100%;
-      left: 0;
-      opacity: 1;
-      overflow-y: scroll;
-      position: absolute;
-      top: 0;
-      transition: all 0.5s;
-      width: 100%;
-      visibility: visible;
-      -webkit-overflow-scrolling: scroll;
-      z-index: 2;
-    `;
+    // We'll use the CSS from style.scss instead of inline styles
 
     const wrapper = document.createElement('div');
     wrapper.className = 'wrapper';
@@ -274,16 +261,8 @@ class CongratulationsState {
     title.textContent = 'Your Learning Statistics';
 
     const closeButton = document.createElement('button');
-    closeButton.innerHTML = `<img src="${window.GameApp.assetPaths.close}">`;
-    closeButton.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      z-index: 3;
-    `;
+    closeButton.setAttribute('aria-label', 'Close statistics');
+    closeButton.innerHTML = `<img src="${window.GameApp.assetPaths.close}" alt="Close">`;
     closeButton.addEventListener('click', () => {
       document.body.removeChild(overlay);
     });

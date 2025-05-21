@@ -529,16 +529,8 @@ class TitleState {
     title.textContent = 'Your Learning Statistics';
 
     const closeButton = document.createElement('button');
-    closeButton.innerHTML = `<img src="${window.GameApp.assetPaths.close}">`;
-    closeButton.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      z-index: 3;
-    `;
+    closeButton.setAttribute('aria-label', 'Close statistics');
+    closeButton.innerHTML = `<img src="${window.GameApp.assetPaths.close}" alt="Close">`;
     closeButton.addEventListener('click', () => {
       document.body.removeChild(overlay);
     });
