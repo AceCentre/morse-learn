@@ -2,6 +2,11 @@
   "extends": "@parcel/config-default",
   "transformers": {
     "*.mp3": ["@parcel/transformer-raw"],
-    "*.mp4": ["@parcel/transformer-raw"]
+    "*.mp4": ["@parcel/transformer-raw"],
+    "*.png": ["@parcel/transformer-raw"],
+    "*.jpg": ["@parcel/transformer-raw"],
+    "*.jpeg": ["@parcel/transformer-raw"],
+    "*.gif": ["@parcel/transformer-raw"],
+    "*.svg": ["@parcel/transformer-raw"]
   }
 }
