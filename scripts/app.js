@@ -19,7 +19,7 @@ import { IntroState } from './intro-state';
 import { GameState } from './game-state';
 import { CongratulationsState } from './congratulations-state';
 import * as config from './config';
-import { getClientHeight } from './util';
+import { getClientHeight, getKeyboardHeight } from './util';
 import { Course } from './course';
 import { SoundManager } from './sound-manager';
 import assetPathsModule from './asset-paths';
@@ -86,6 +86,14 @@ class App {
   determineScale() {
     this.game.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
 
+    // Add window resize event handler
+    window.addEventListener('resize', () => {
+      this.handleResize();
+    });
+
+    // Initial resize
+    this.handleResize();
+
     // Only if mobile
     if (!this.game.device.desktop) {
       this.game.scale.forceOrientation(false, true);
@@ -113,6 +121,32 @@ class App {
       });
     } else {
       this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    }
+  }
+
+  // Handle window resize
+  handleResize() {
+    if (!this.game) return;
+
+    // Update the game height based on the current window size
+    const newHeight = getClientHeight();
+    config.GLOBALS.appHeight = newHeight;
+
+    // Update world positions
+    const keyboardHeight = getKeyboardHeight();
+    const centreOffset = window.innerWidth > 500 ? 0.5 : 0.35;
+
+    config.GLOBALS.worldBottom = (newHeight - keyboardHeight);
+    config.GLOBALS.worldCenter = (newHeight - keyboardHeight) * centreOffset;
+    config.GLOBALS.worldTop = (newHeight - keyboardHeight) * 0.35;
+
+    // Resize the game canvas
+    this.game.scale.setGameSize(this.game.width, newHeight);
+
+    // If we're in the game state, update the header position
+    if (this.game.state.current === 'game' && this.game.state.states.game.header) {
+      const header = this.game.state.states.game.header;
+      header.updatePosition();
     }
   }
 

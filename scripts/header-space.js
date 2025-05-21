@@ -154,6 +154,23 @@ class HeaderSpace {
   create() {
     this.createLetters();
   }
+
+  // Update header position when window is resized
+  updatePosition() {
+    // Update the header group position
+    this.headerGroup.position.x = this.game.world.centerX - (this.headerGroup.width / 2);
+
+    // Make sure the header is visible
+    if (this.headerGroup.position.y < 0) {
+      this.game.add.tween(this.headerGroup).to({ y: config.header.topPosition }, 300, Phaser.Easing.Exponential.Out, true);
+    } else {
+      this.headerGroup.position.y = config.header.topPosition;
+    }
+
+    // Update the circles group position
+    this.circlesGroup.position.x = this.game.world.centerX - (this.circlesGroup.width / 2);
+    this.circlesGroup.position.y = config.header.topPosition + 15;
+  }
 }
 
 module.exports.HeaderSpace = HeaderSpace;
