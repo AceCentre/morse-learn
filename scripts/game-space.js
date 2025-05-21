@@ -16,7 +16,10 @@ import { Word } from "./word";
 import { MorseBoard } from './morse-board'
 let _ = require("lodash");
 const config = require("./config");
-const delay = require("delay");
+// Create our own delay function using setTimeout
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 class GameSpace {
   constructor(game) {
@@ -81,8 +84,8 @@ class GameSpace {
 
     this.morseBoard = new MorseBoard({
       debounce: 2e3,
-      dashSoundPath: "./assets/sounds/dash.mp3",
-      dotSoundPath: "./assets/sounds/dot.mp3",
+      dashSoundPath: window.GameApp.assetPaths.dashSound,
+      dotSoundPath: window.GameApp.assetPaths.dotSound,
       notificationStyle: "output",
       game: this.game,
       onCommit: (e) =>  {
@@ -233,6 +236,34 @@ class GameSpace {
     this.currentWords[this.currentWords.length - 1].setPosition(myStartX);
   }
 
+  // Check if all letters have been learned
+  checkAllLettersLearned() {
+    const totalLetters = this.parent.course.lettersToLearn.length;
+    const learnedLetters = Object.keys(this.letterScoreDict).filter(
+      key => this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD
+    ).length;
+
+    // If all letters are learned, show the congratulations screen
+    if (learnedLetters === totalLetters) {
+      // Save progress before transitioning
+      this.parent.saveProgress();
+
+      // Get analytics data from localStorage
+      const analyticsData = localStorage.getItem('analyticsData')
+        ? JSON.parse(localStorage.getItem('analyticsData'))
+        : null;
+
+      // Transition to the congratulations state
+      this.game.state.start('congratulations', true, false, {
+        letterScoreDict: this.letterScoreDict,
+        analyticsData: analyticsData
+      });
+      return true;
+    }
+
+    return false;
+  }
+
   async checkMatch(typedLetter) {
     if (!this.inputReady) {
       return;
@@ -287,12 +318,17 @@ class GameSpace {
         theLetterIndex
       );
 
+      // Check if all letters have been learned after updating progress
+      if (this.checkAllLettersLearned()) {
+        return; // Exit if we've transitioned to the congratulations screen
+      }
+
       await this.playLetter(letter);
       if (this.letterScoreDict[letter] < config.app.LEARNED_THRESHOLD) {
         await word.showHint();
         await this.playHints(word.getCurrentLetter());
       }
-    
+
     } else {
       // Got a letter wrong
       incrementWrongCount(letter);
@@ -448,10 +484,22 @@ class GameSpace {
               true,
               config.animations.SLIDE_END_DELAY
             );
+          // Update both the hint text and the hint image
           this.game.add
-            .tween(hint)
+            .tween(hint.text)
             .to(
               { x: hintX - distBetweenTargetAndNextLetter },
+              config.animations.SLIDE_TRANSITION,
+              Phaser.Easing.Exponential.Out,
+              true,
+              config.animations.SLIDE_END_DELAY
+            );
+
+          // Also update the hint image position to match the letter
+          this.game.add
+            .tween(hint.image)
+            .to(
+              { x: letterX - distBetweenTargetAndNextLetter },
               config.animations.SLIDE_TRANSITION,
               Phaser.Easing.Exponential.Out,
               true,

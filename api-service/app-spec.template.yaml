@@ -1,0 +1,40 @@
+name: morse-learn-api
+region: lon
+services:
+  - name: api
+    github:
+      repo: willwade/morse-learn
+      branch: master
+      deploy_on_push: true
+    source_dir: api-service
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    routes:
+      - path: /api
+    envs:
+      - key: DB_HOST
+        value: your-db-host.example.com
+        scope: RUN_TIME
+      - key: DB_PORT
+        value: "25060"
+        scope: RUN_TIME
+      - key: DB_USER
+        value: your_db_user
+        scope: RUN_TIME
+      - key: DB_NAME
+        value: your_db_name
+        scope: RUN_TIME
+      - key: FRONTEND_URL
+        value: ${APP_URL}
+        scope: RUN_TIME
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      - key: DB_PASSWORD
+        value: your_db_password
+        scope: RUN_TIME
+        type: SECRET
+      - key: SSL_CERT_PATH
+        value: /etc/ssl/certs/ca-certificates.crt
+        scope: RUN_TIME
