@@ -47,6 +47,13 @@ class GameState {
     // Keep header space on top
     this.game.world.bringToTop(this.header.headerGroup);
   }
+
+  // Save progress to localStorage
+  saveProgress() {
+    if (typeof(Storage) !== 'undefined') {
+      localStorage.setItem(this.course.storageKey, JSON.stringify(this.letterScoreDict));
+    }
+  }
 }
 
 module.exports.GameState = GameState;

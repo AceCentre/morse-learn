@@ -1,7 +1,7 @@
 {
   "name": "morse-learn",
   "engines": {
-    "node": "10"
+    "node": ">=16"
   },
   "eslintConfig": {
     "env": {
@@ -14,71 +14,44 @@
   },
   "version": "0.0.0",
   "license": "MIT",
-  "browserify": {
-    "transform": [
-      [
-        "babelify",
-        {
-          "presets": [
-            [
-              "env",
-              {
-                "targets": {
-                  "browsers": [
-                    "last 2 versions"
-                  ]
-                }
-              }
-            ]
-          ]
-        }
-      ]
-    ]
-  },
+  "browserslist": [
+    "last 2 versions",
+    "not dead",
+    "> 0.5%"
+  ],
   "scripts": {
-    "postinstall": "npm run require-fontawesome",
-    "browserify": "browserify scripts/app.js -o build/bundle.js",
-    "build": "npm run require-fontawesome && npm run browserify; npm run sass; npm run uglifycss",
+    "build": "parcel build index.html --public-url ./",
     "deploy": "npm run build; gcloud app deploy --project=gweb-morse-tts",
     "eslint": "eslint scripts",
     "precommit": "true",
     "_precommit": "npm run eslint",
-    "require-fontawesome": "cp -r ./node_modules/@fortawesome/fontawesome-free/scss/* styles/fontawesome/ && cp -r ./node_modules/@fortawesome/fontawesome-free/webfonts .",
-    "sass": "node-sass styles/style.scss build/style.css",
-    "sasswatch": "node-sass --watch styles/style.scss:build/style.css",
-    "serve": "budo scripts/app.js:build/bundle.js --live --host 0.0.0.0",
-    "start": "npm run sass; concurrently -k -p \"[{name}]\" -n \"HTTP,SASS\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run serve\" \"npm run sasswatch\"",
-    "uglifycss": "uglifycss build/style.css --output build/style.css",
-    "uglifyjs": "uglifyjs build/bundle.js -o build/bundle.js",
+    "start": "parcel index.html --open",
     "create-db": "docker run --name morse-learn-db -e MYSQL_ROOT_PASSWORD=root -d mysql/mysql-server",
     "teardown-db": "docker container stop morse-learn-db && docker container rm morse-learn-db"
   },
   "devDependencies": {
-    "@fortawesome/fontawesome-free": "^5.12.0",
-    "babel-core": "^6.26.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babelify": "^8.0.0",
-    "browserify": "^16.1.0",
-    "budo": "^11.2.0",
-    "concurrently": "^3.5.1",
-    "delay": "^4.3.0",
-    "eslint": "^4.18.0",
-    "git-pre-commit": "^2.1.3",
-    "node-sass": "^4.7.2",
-    "uglify-js": "^3.3.11",
-    "uglifycss": "^0.0.27"
+    "@babel/core": "^7.22.10",
+    "@babel/preset-env": "^7.22.10",
+    "@fortawesome/fontawesome-free": "^6.4.2",
+    "@parcel/transformer-raw": "^2.15.1",
+    "@parcel/transformer-sass": "^2.9.3",
+    "concurrently": "^8.2.0",
+    "delay": "^6.0.0",
+    "eslint": "^8.47.0",
+    "parcel": "^2.9.3"
   },
   "dependencies": {
-    "cookie": "^0.4.1",
-    "db-migrate": "^0.11.12",
-    "db-migrate-mysql": "^2.1.2",
-    "dotenv": "^8.2.0",
-    "howler": "^2.2.1",
-    "lodash": "^4.17.5",
-    "mysql2": "^2.2.5",
-    "natives": "^1.1.6",
+    "canvas-confetti": "^1.6.0",
+    "cookie": "^0.5.0",
+    "core-js": "^3.32.0",
+    "db-migrate": "^0.11.13",
+    "db-migrate-mysql": "^2.2.0",
+    "dotenv": "^16.3.1",
+    "howler": "^2.2.3",
+    "lodash": "^4.17.21",
+    "mysql2": "^3.6.0",
+    "regenerator-runtime": "^0.13.11",
     "spinkit": "^2.0.1",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   }
 }

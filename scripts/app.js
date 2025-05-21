@@ -11,14 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import 'babel-polyfill';
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
+import Phaser from './phaser-global';
 import { TitleState } from './title-state';
 import { IntroState } from './intro-state';
 import { GameState } from './game-state';
+import { CongratulationsState } from './congratulations-state';
 import * as config from './config';
-import { getClientHeight } from './util'
+import { getClientHeight } from './util';
 import { Course } from './course';
 import { SoundManager } from './sound-manager';
+import assetPathsModule from './asset-paths';
 
 class App {
 
@@ -27,7 +31,14 @@ class App {
     this.downEvent = null;
     this.modalShow = false;
 
+    // Make assetPaths available to the whole class
+    this.assetPaths = assetPathsModule;
+
     this.course = new Course(config.courses[config.course]);
+
+    // Make assetPaths available globally
+    window.GameApp = window.GameApp || {};
+    window.GameApp.assetPaths = assetPathsModule;
 
     // Handle clicking of modal
     document.getElementById('button').addEventListener('click', () => {
@@ -118,71 +129,109 @@ class App {
     this.game.state.add('title', new TitleState(this.game, GameApp.course));
     this.game.state.add('intro', new IntroState(this.game));
     this.game.state.add('game', new GameState(this.game, GameApp.course));
+    this.game.state.add('congratulations', new CongratulationsState(this.game, GameApp.course));
     this.game.state.start('title');
   }
 
   preload() {
     GameApp.enableLoadingModal()
 
-    // Images
-    this.game.load.image('a', 'assets/images/final/A.png');
-    this.game.load.image('b', 'assets/images/final/B.png');
-    this.game.load.image('c', 'assets/images/final/C.png');
-    this.game.load.image('d', 'assets/images/final/D.png');
-    this.game.load.image('e', 'assets/images/final/E.png');
-    this.game.load.image('f', 'assets/images/final/F.png');
-    this.game.load.image('g', 'assets/images/final/G.png');
-    this.game.load.image('h', 'assets/images/final/H.png');
-    this.game.load.image('i', 'assets/images/final/I.png');
-    this.game.load.image('j', 'assets/images/final/J.png');
-    this.game.load.image('k', 'assets/images/final/K.png');
-    this.game.load.image('l', 'assets/images/final/L.png');
-    this.game.load.image('m', 'assets/images/final/M.png');
-    this.game.load.image('n', 'assets/images/final/N.png');
-    this.game.load.image('o', 'assets/images/final/O.png');
-    this.game.load.image('p', 'assets/images/final/P.png');
-    this.game.load.image('q', 'assets/images/final/Q.png');
-    this.game.load.image('r', 'assets/images/final/R.png');
-    this.game.load.image('s', 'assets/images/final/S.png');
-    this.game.load.image('t', 'assets/images/final/T.png');
-    this.game.load.image('u', 'assets/images/final/U.png');
-    this.game.load.image('v', 'assets/images/final/V.png');
-    this.game.load.image('w', 'assets/images/final/W.png');
-    this.game.load.image('x', 'assets/images/final/X.png');
-    this.game.load.image('y', 'assets/images/final/Y.png');
-    this.game.load.image('z', 'assets/images/final/Z.png');
+    // Images - using asset paths from asset-paths.js
+    this.game.load.image('a', GameApp.assetPaths.a);
+    this.game.load.image('b', GameApp.assetPaths.b);
+    this.game.load.image('c', GameApp.assetPaths.c);
+    this.game.load.image('d', GameApp.assetPaths.d);
+    this.game.load.image('e', GameApp.assetPaths.e);
+    this.game.load.image('f', GameApp.assetPaths.f);
+    this.game.load.image('g', GameApp.assetPaths.g);
+    this.game.load.image('h', GameApp.assetPaths.h);
+    this.game.load.image('i', GameApp.assetPaths.i);
+    this.game.load.image('j', GameApp.assetPaths.j);
+    this.game.load.image('k', GameApp.assetPaths.k);
+    this.game.load.image('l', GameApp.assetPaths.l);
+    this.game.load.image('m', GameApp.assetPaths.m);
+    this.game.load.image('n', GameApp.assetPaths.n);
+    this.game.load.image('o', GameApp.assetPaths.o);
+    this.game.load.image('p', GameApp.assetPaths.p);
+    this.game.load.image('q', GameApp.assetPaths.q);
+    this.game.load.image('r', GameApp.assetPaths.r);
+    this.game.load.image('s', GameApp.assetPaths.s);
+    this.game.load.image('t', GameApp.assetPaths.t);
+    this.game.load.image('u', GameApp.assetPaths.u);
+    this.game.load.image('v', GameApp.assetPaths.v);
+    this.game.load.image('w', GameApp.assetPaths.w);
+    this.game.load.image('x', GameApp.assetPaths.x);
+    this.game.load.image('y', GameApp.assetPaths.y);
+    this.game.load.image('z', GameApp.assetPaths.z);
 
-
-    this.game.load.image('close', 'assets/images/close.svg');
-    this.game.load.image('badge', 'assets/images/badge.svg');
+    this.game.load.image('close', GameApp.assetPaths.close);
+    this.game.load.image('badge', GameApp.assetPaths.badge);
 
     // Video
-    this.game.load.video('intro', 'assets/videos/intro.mp4');
+    this.game.load.video('intro', GameApp.assetPaths.intro);
 
     // Audio
     this.game.customSoundManager = new SoundManager()
-    this.game.customSoundManager.createSound('period', '/assets/sounds/period')
-    this.game.customSoundManager.createSound('dash', '/assets/sounds/dash')
-    this.game.customSoundManager.createSound('dot', '/assets/sounds/dot')
+    // Use assetPaths for loading sounds
+    this.game.customSoundManager.createSound('period', GameApp.assetPaths.periodSound);
+    this.game.customSoundManager.createSound('dash', GameApp.assetPaths.dashSound);
+    this.game.customSoundManager.createSound('dot', GameApp.assetPaths.dotSound);
+
+    // Add correct and wrong sounds early to ensure they're loaded
+    this.game.customSoundManager.createSound('correct', GameApp.assetPaths.correctSound);
+    this.game.customSoundManager.createSound('wrong', GameApp.assetPaths.wrongSound);
+
+    // Add debug logging
+    console.log('Sound manager initialized with basic sounds')
 
 
     // letters + soundalike list
-    let path = '/assets' + GameApp.course.assets;
+    // First load the nohint image with a special key - MUST be loaded first
+    this.game.load.image('nohint', GameApp.assetPaths.nohint);
+
+    // Make sure the nohint image is loaded before proceeding
+    this.game.load.onFileComplete.add((progress, cacheKey) => {
+      if (cacheKey === 'nohint') {
+        console.log('nohint image loaded successfully');
+      }
+    });
+
+    // Then load the actual letter images from assets/images/final
     for (let letter of GameApp.course.letters) {
-      this.game.load.image(letter, path + 'images/nohint.png');
-      this.game.customSoundManager.createSound('letter-' + letter, path + 'sounds/' + letter)
-      this.game.customSoundManager.createSound('soundalike-letter-' + letter, path + 'sounds/soundalikes-mw/' + letter)
+      // Use the letter-specific images from assetPaths instead of nohint
+      console.log(`Loading image for letter: ${letter} from path: ${GameApp.assetPaths[letter]}`);
+      this.game.load.image(letter, GameApp.assetPaths[letter]);
+
+      // Load the sounds for each letter
+      const letterSoundPathKey = 'letter_' + letter + '_sound';
+      const soundalikeMwPathKey = 'soundalike_mw_' + letter + '_sound';
+
+      if (GameApp.assetPaths[letterSoundPathKey]) {
+        this.game.customSoundManager.createSound('letter-' + letter, GameApp.assetPaths[letterSoundPathKey]);
+      } else {
+        console.warn(`Asset path for letter sound ${letterSoundPathKey} not found.`);
+      }
+
+      if (GameApp.assetPaths[soundalikeMwPathKey]) {
+        this.game.customSoundManager.createSound('soundalike-letter-' + letter, GameApp.assetPaths[soundalikeMwPathKey]);
+      } else {
+        console.warn(`Asset path for soundalike_mw ${soundalikeMwPathKey} not found.`);
+      }
     }
-    // correct, wrong
-    this.game.customSoundManager.createSound('correct', '/assets/sounds/correct');
-    this.game.customSoundManager.createSound('wrong', '/assets/sounds/wrong');
+
+    // Make sure the images are properly loaded before starting the game
+    this.game.load.onLoadComplete.add(() => {
+      console.log("All assets loaded successfully");
+    });
+
+    console.log('All sound files loaded');
   }
 
   // Show about modal
   showModal() {
     if (this.modalShow) {
       window.location.hash = '#about';
-      document.getElementById('button').innerHTML = '<img src="assets/images/close.svg">';
+      document.getElementById('button').innerHTML = `<img src="${this.assetPaths.close}">`;
       document.getElementById('overlay').classList.add('open');
     } else {
       window.location.hash = '';

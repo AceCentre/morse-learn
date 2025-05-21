@@ -32,8 +32,17 @@ class IntroState {
   }
 
   playVideo() {
+    // Use the resolved asset path for the intro video
     const video = this.game.add.video('intro');
-    video.mute = true;
+
+    // Check if video is null before setting properties
+    if (video && video.video) {
+      video.mute = true;
+    } else {
+      console.warn('Video not loaded properly, skipping intro');
+      this.start();
+      return;
+    }
 
     const videoWidth = video.width;
     const videoScale = window.innerWidth / videoWidth
@@ -47,7 +56,7 @@ class IntroState {
       cappedScale,
       cappedScale
     );
-    
+
     video.unlock();
     video.play();
 
