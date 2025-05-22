@@ -19,7 +19,7 @@ import { IntroState } from './intro-state';
 import { GameState } from './game-state';
 import { CongratulationsState } from './congratulations-state';
 import * as config from './config';
-import { getClientHeight } from './util';
+import { getClientHeight, getKeyboardHeight } from './util';
 import { Course } from './course';
 import { SoundManager } from './sound-manager';
 import assetPathsModule from './asset-paths';
@@ -39,6 +39,31 @@ class App {
     // Make assetPaths available globally
     window.GameApp = window.GameApp || {};
     window.GameApp.assetPaths = assetPathsModule;
+
+    // Add global function to toggle one-switch mode
+    window.GameApp.toggleOneSwitchMode = (enable) => {
+      // Store the setting in localStorage
+      if (typeof Storage !== "undefined") {
+        localStorage.setItem("one_switch_mode", enable);
+      }
+
+      // Update the game state if it exists
+      if (this.game && this.game.state) {
+        // Store in game object for access across states
+        this.game.oneSwitchMode = enable;
+
+        // If we're in the game state, update the morseBoard
+        if (this.game.state.current === 'game') {
+          const gameState = this.game.state.states.game;
+          if (gameState && gameState.gameSpace && gameState.gameSpace.morseBoard) {
+            gameState.gameSpace.morseBoard.toggleOneSwitchMode(enable);
+            return true;
+          }
+        }
+      }
+
+      return false;
+    };
 
     // Handle clicking of modal
     document.getElementById('button').addEventListener('click', () => {
@@ -82,37 +107,76 @@ class App {
     });
   }
 
-  // Resize scaling, based on device, force orientation
+  // Resize scaling, based on device, support both orientations
   determineScale() {
     this.game.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
 
-    // Only if mobile
-    if (!this.game.device.desktop) {
-      this.game.scale.forceOrientation(false, true);
+    // Add window resize event handler
+    window.addEventListener('resize', () => {
+      this.handleResize();
+    });
 
-      // Landscape orientation
-      this.game.scale.enterIncorrectOrientation.add(() => {
-        this.game.world.alpha = 0;
-        document.getElementById('landscape').style.display = 'block';
+    // Initial resize
+    this.handleResize();
 
-        if (this.game.state.current === 'title') {
-          document.getElementById('button').style.display = 'none';
-          document.getElementById('overlay').style.display = 'none';
-        }
-      });
-
-      // Portrait orientation
-      this.game.scale.leaveIncorrectOrientation.add(() => {
-        this.game.world.alpha = 1;
-        document.getElementById('landscape').style.display = 'none';
-
-        if (this.game.state.current === 'title') {
-          // document.getElementById('button').style.display = 'block';
-          document.getElementById('overlay').style.display = 'block';
-        }
-      });
-    } else {
+    // For desktop, use SHOW_ALL scale mode
+    if (this.game.device.desktop) {
       this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    }
+
+    // Make sure the landscape message is hidden
+    document.getElementById('landscape').style.display = 'none';
+
+    // Always show the game content
+    this.game.world.alpha = 1;
+  }
+
+  // Handle window resize
+  handleResize() {
+    if (!this.game) return;
+
+    // Update the game height based on the current window size
+    const newHeight = getClientHeight();
+    config.GLOBALS.appHeight = newHeight;
+
+    // Update isLandscape flag based on current orientation
+    config.GLOBALS.isLandscape = window.innerWidth > window.innerHeight;
+
+    // Update world positions
+    const keyboardHeight = getKeyboardHeight();
+    const centreOffset = window.innerWidth > 500 ? 0.5 : 0.35;
+
+    config.GLOBALS.worldBottom = (newHeight - keyboardHeight);
+    config.GLOBALS.worldCenter = (newHeight - keyboardHeight) * centreOffset;
+    config.GLOBALS.worldTop = (newHeight - keyboardHeight) * 0.35;
+
+    // Resize the game canvas
+    this.game.scale.setGameSize(this.game.width, newHeight);
+
+    // If we're in the game state, update the header position
+    if (this.game.state.current === 'game' && this.game.state.states.game.header) {
+      const header = this.game.state.states.game.header;
+      header.updatePosition();
+    }
+
+    // Adjust UI elements based on orientation if needed
+    this.adjustUIForOrientation();
+  }
+
+  // Adjust UI elements based on current orientation
+  adjustUIForOrientation() {
+    // Get current orientation
+    const isLandscape = window.innerWidth > window.innerHeight;
+
+    // Adjust UI elements as needed for different orientations
+    const morseBoard = document.getElementById('morseboard');
+    if (morseBoard) {
+      // In landscape mode on small screens, we might want to adjust the morse board height
+      if (isLandscape && window.innerWidth < 768) {
+        morseBoard.style.maxHeight = '180px';
+      } else {
+        morseBoard.style.maxHeight = '220px';
+      }
     }
   }
 
@@ -123,8 +187,9 @@ class App {
     this.game.stage.smoothed = config.app.smoothed;
     GameApp.determineScale();
 
-    // Show about button
+    // Show about and settings buttons
     document.getElementById('button').style.display = 'block';
+    document.getElementById('settings-button').style.display = 'block';
 
     this.game.state.add('title', new TitleState(this.game, GameApp.course));
     this.game.state.add('intro', new IntroState(this.game));

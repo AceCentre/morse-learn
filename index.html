@@ -39,31 +39,109 @@
   <body>
     <div id="landscape">Please rotate back to portrait mode.</div>
     <a id="button" class="about-button">?</a>
-    <div class="tl-btn-group">
-      <h2>Settings</h2>
-      <p>Click the buttons below to turn the settings off and on.</p>
-      <a href title="Audio toggle" class="item audio-toggle"
-        ><i class="fa fa-2x fa-volume-up"></i><span>Sound</span></a
-      >
-      <a href title="Speech toggle" class="item speech-toggle"
-        ><i class="fa fa-2x fa-assistive-listening-systems"></i
-        ><span>Speech Hints</span></a
-      >
-      <a href title="Visual toggle" class="item visual-toggle"
-        ><i class="fa fa-2x fa-eye"></i><span>Visual Hints</span></a
-      >
-      <a href title="Reset Progress" class="item reset-button"
-        ><i class="fa fa-2x fa-redo"></i><span>Reset Progress</span></a
-      >
-      <a href title="Tracking Consent" class="item consent-toggle"
-      ><i class="fa fa-2x fa-binoculars"></i><span>Tracking Consent</span></a
-    >
-      <a href title="View Statistics" class="item stats-button"
-      ><i class="fa fa-2x fa-chart-bar"></i><span>View Statistics</span></a
-    >
-      <a href title="Toggle Morse Board" class="item keyboard-toggle"
-      ><i class="fa fa-2x fa-keyboard"></i><span>Morse Board</span></a
-    >
+    <button id="settings-button"><i class="fa fa-cog" aria-hidden="true"></i></button>
+
+    <!-- Hidden elements for backward compatibility (not displayed) -->
+    <div style="display: none;">
+      <a class="item audio-toggle"></a>
+      <a class="item speech-toggle"></a>
+      <a class="item visual-toggle"></a>
+      <a class="item reset-button"></a>
+      <a class="item consent-toggle"></a>
+      <a class="item stats-button"></a>
+      <a class="item keyboard-toggle"></a>
+      <a class="item one-switch-toggle"></a>
+    </div>
+
+    <!-- New Settings Modal -->
+    <div id="settings-modal" class="modal-container">
+      <div class="modal settings-modal">
+        <h1>Settings</h1>
+        <button class="close-button"><i class="fa fa-times"></i></button>
+
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-volume-up"></i>
+              <span>Sound</span>
+            </div>
+            <div class="setting-toggle" id="sound-toggle">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-assistive-listening-systems"></i>
+              <span>Speech Hints</span>
+            </div>
+            <div class="setting-toggle" id="speech-toggle">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-eye"></i>
+              <span>Visual Hints</span>
+            </div>
+            <div class="setting-toggle" id="visual-toggle">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-keyboard"></i>
+              <span>Morse Board</span>
+            </div>
+            <div class="setting-toggle" id="keyboard-toggle-new">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-toggle-on"></i>
+              <span>One-Switch Mode</span>
+            </div>
+            <div class="setting-toggle" id="one-switch-toggle-new">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label">
+              <i class="fa fa-binoculars"></i>
+              <span>Tracking Consent</span>
+            </div>
+            <div class="setting-toggle" id="consent-toggle-new">
+              <div class="toggle-switch">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-buttons">
+          <button id="reset-button-new" class="settings-button">
+            <i class="fa fa-redo"></i> Reset Progress
+          </button>
+          <button id="stats-button-new" class="settings-button">
+            <i class="fa fa-chart-bar"></i> View Statistics
+          </button>
+        </div>
+      </div>
     </div>
     <div id="overlay">
       <div class="wrapper">
@@ -108,32 +186,20 @@
     <div id="morseboard" data-children-count="1">
       <input id="output" readonly="true" tabindex="-1" />
 
-      <div class="keyboard-controls">
-        <h3>Keyboard Controls</h3>
-        <div>
-          <p>Dot Keys</p>
-          <div>
-            <button class="keybutton">.</button>
-            <button class="keybutton">j</button>
-            <button class="keybutton longkey">space</button>
-          </div>
-        </div>
-
-        <div>
-          <p>Dash Keys</p>
-          <div>
-            <button class="keybutton">-</button>
-            <button class="keybutton">k</button>
-            <button class="keybutton longkey">enter</button>
-          </div>
-        </div>
-      </div>
       <div class="button-container">
+        <div class="keyboard-hint">
+          <div class="key-row">
+            <span>Dot: J or .</span>
+            <span>Dash: K or -</span>
+            <span>Commit: Space</span>
+          </div>
+        </div>
         <div id="button-box">
           <div class="dot-box">
             <button id="dot" tabindex="0">
               <span></span>
             </button>
+            <div id="one-switch-progress" class="progress-indicator"></div>
           </div>
 
           <div class="dash-box">

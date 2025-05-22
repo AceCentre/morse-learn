@@ -16,16 +16,13 @@ const words = require('./words');
 import { getClientHeight, getKeyboardHeight, getGameAreaHeight } from './util'
 
 const isTouch = 'ontouchstart' in document.documentElement;
+// Initialize isLandscape, but this will be updated dynamically in App.handleResize()
 const isLandscape = window.innerWidth > window.innerHeight;
 
 const breakPointerSwitcher = ({ breakpoint = 500, below, above }) => {
-
   const width = document.body.clientWidth;
-
   if(width > breakpoint) return above;
-
   return below;
-
 }
 
 // Cap the width at double the height
@@ -95,7 +92,15 @@ const config = {
       headerSpacing: -10,
       storageKey: 'savedLetters',
       letters: ['e', 't', 'a', 'i', 'm', 's', 'o', 'h', 'n', 'c', 'r', 'd', 'u', 'k', 'l', 'f', 'b', 'p', 'g', 'j', 'v', 'q', 'w', 'x', 'y', 'z'],
-      words: words
+      words: words,
+      nextCourse: 'numbers'
+    },
+    numbers: {
+      name: 'Numbers',
+      headerSpacing: -10,
+      storageKey: 'savedNumbers',
+      letters: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      words: ['123', '456', '789', '012', '345', '678', '901', '234', '567', '890', '1234', '5678', '9012', '3456', '7890']
     },
     keyboard: {
       name: 'Keyboard Keys',

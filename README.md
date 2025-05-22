@@ -27,9 +27,6 @@ The application includes an API service for collecting analytics data. The API s
 
 See the [API Service README](api-service/README.md) for setup and deployment instructions.
 
-### Database Migration
-
-The application has been migrated from Netlify Functions to a dedicated API service on DigitalOcean. See the [Migration Guide](api-service/MIGRATION.md) for details on the database migration process.
 
 ## Contributors
 Originally made by Tania Finlayson and [Use All Five](https://useallfive.com) with friends at the Google Creative Lab in collaboration. This fork was made by the [Ace Centre](https://acecentre.org.uk). [Matthew Wade](https://www.matthewwade.net), Actor & Voice over artist, Kindly created the "soundsalike" sounds.

@@ -140,12 +140,16 @@ class TitleState {
     let trackingToggle = document.querySelector(".consent-toggle");
     let statsButton = document.querySelector(".stats-button");
     let keyboardToggle = document.querySelector(".keyboard-toggle");
+    let oneSwitchToggle = document.querySelector(".one-switch-toggle");
 
-    // Make the display match the initial state
-    audioToggle.classList.add(initialAudio ? 'noop' : 'disabled')
-    speechToggle.classList.add(initialSpeechAssistive ? 'noop' : 'disabled')
-    visualToggle.classList.add(initialVisualCues ? 'noop' : 'disabled')
-    trackingToggle.classList.add(initialTrackingConsent ? 'noop' : 'disabled')
+    // Make the display match the initial state - check if elements exist first
+    if (audioToggle) audioToggle.classList.add(initialAudio ? 'noop' : 'disabled');
+    if (speechToggle) speechToggle.classList.add(initialSpeechAssistive ? 'noop' : 'disabled');
+    if (visualToggle) visualToggle.classList.add(initialVisualCues ? 'noop' : 'disabled');
+    if (trackingToggle) trackingToggle.classList.add(initialTrackingConsent ? 'noop' : 'disabled');
+
+    // Setup the settings button and modal
+    this.setupSettingsModal(initialAudio, initialSpeechAssistive, initialVisualCues, initialTrackingConsent)
 
     const startListener = () => doStart();
 
@@ -155,7 +159,6 @@ class TitleState {
     }
     let doStart = () => {
       clearEventHandlers();
-      document.querySelector(".tl-btn-group").classList.add('gamemode');
       this.game.have_audio = this.have_audio;
       this.game.have_speech_assistive = this.have_speech_assistive;
       this.game.have_visual_cues = this.have_visual_cues;
@@ -173,8 +176,6 @@ class TitleState {
     document.addEventListener("keydown", startListener);
 
     canvas.addEventListener("click", startListener);
-
-    document.querySelector(".tl-btn-group").style.display = 'flex';
     let updateAudioToggles = () => {
       audioToggle.classList[this.have_audio ? "remove" : "add"]("disabled");
       speechToggle.classList[
@@ -312,6 +313,53 @@ class TitleState {
 
     keyboardToggle.addEventListener('click', onKeyboardToggle, true);
 
+    // Add one-switch mode toggle handler
+    const onOneSwitchToggle = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      console.log("One-switch toggle clicked");
+
+      // Get the current one-switch mode state
+      const currentMode = localStorage.getItem("one_switch_mode") === "true";
+      const newMode = !currentMode;
+
+      // Use the global function to toggle one-switch mode
+      const success = window.GameApp.toggleOneSwitchMode(newMode);
+
+      // Update toggle button appearance regardless of success
+      const icon = oneSwitchToggle.querySelector('i');
+      if (icon) {
+        icon.className = newMode ? 'fa fa-2x fa-toggle-on' : 'fa fa-2x fa-toggle-off';
+      }
+      oneSwitchToggle.classList[newMode ? "remove" : "add"]("disabled");
+
+      // If we're not in game state, show a message but still save the preference
+      if (!success && this.game.state.current !== 'game') {
+        console.log("Not in game state, preference saved but not applied yet");
+        alert("One-switch mode preference saved. It will be applied when you start the game.");
+      }
+    };
+
+    // Initialize one-switch mode toggle from localStorage
+    const oneSwitchMode = getBoolFromLocalStore('one_switch_mode');
+
+    // Store the current mode in the game object for access across states
+    this.game.oneSwitchMode = oneSwitchMode;
+
+    // Update the toggle button appearance
+    if (oneSwitchMode && oneSwitchToggle) {
+      const icon = oneSwitchToggle.querySelector('i');
+      if (icon) {
+        icon.className = 'fa fa-2x fa-toggle-on';
+      }
+      oneSwitchToggle.classList.remove("disabled");
+    } else if (oneSwitchToggle) {
+      oneSwitchToggle.classList.add("disabled");
+    }
+
+    oneSwitchToggle.addEventListener('click', onOneSwitchToggle, true);
+
     // Send progress to the server every
     // 60 seconds if consent is turned on
     const SEND_PROGRESS_INTERVAL = 30 * 1000;
@@ -320,6 +368,222 @@ class TitleState {
 
       if(consented) this.sendProgress()
     }, SEND_PROGRESS_INTERVAL)
+  }
+
+  setupSettingsModal(initialAudio, initialSpeechAssistive, initialVisualCues, initialTrackingConsent) {
+    // Get references to the settings button and modal
+    const settingsButton = document.getElementById('settings-button');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeButton = settingsModal.querySelector('.close-button');
+
+    // Get references to the toggle switches
+    const soundToggle = document.getElementById('sound-toggle');
+    const speechToggle = document.getElementById('speech-toggle');
+    const visualToggle = document.getElementById('visual-toggle');
+    const keyboardToggleNew = document.getElementById('keyboard-toggle-new');
+    const oneSwitchToggleNew = document.getElementById('one-switch-toggle-new');
+    const consentToggleNew = document.getElementById('consent-toggle-new');
+
+    // Get references to the buttons
+    const resetButtonNew = document.getElementById('reset-button-new');
+    const statsButtonNew = document.getElementById('stats-button-new');
+
+    // Initialize toggle states
+    this.updateToggleState(soundToggle, initialAudio);
+    this.updateToggleState(speechToggle, initialSpeechAssistive);
+    this.updateToggleState(visualToggle, initialVisualCues);
+    this.updateToggleState(consentToggleNew, initialTrackingConsent);
+
+    // Initialize keyboard toggle state
+    const morseBoardHidden = getBoolFromLocalStore('morseboard_hidden');
+    this.updateToggleState(keyboardToggleNew, !morseBoardHidden);
+
+    // Initialize one-switch toggle state
+    const oneSwitchMode = getBoolFromLocalStore('one_switch_mode');
+    this.updateToggleState(oneSwitchToggleNew, oneSwitchMode);
+
+    // Show the settings button
+    settingsButton.style.display = 'block';
+
+    // Add event listeners for opening/closing the modal
+    settingsButton.addEventListener('click', () => {
+      settingsModal.style.display = 'flex';
+    });
+
+    closeButton.addEventListener('click', () => {
+      settingsModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+      }
+    });
+
+    // Add event listeners for toggle switches
+    soundToggle.addEventListener('click', () => {
+      const newState = !this.have_audio;
+      this.have_audio = newState;
+      this.game.have_audio = newState;
+      localStorage.setItem('have_audio', newState);
+      this.updateToggleState(soundToggle, newState);
+
+      // If we turn sound off we should also turn speech have_speech_assistive off
+      if (!newState) {
+        this.have_speech_assistive = false;
+        this.game.have_speech_assistive = false;
+        localStorage.setItem('have_speech_assistive', false);
+        this.updateToggleState(speechToggle, false);
+      }
+
+      // Also update the original toggle for compatibility
+      const audioToggle = document.querySelector(".audio-toggle");
+      if (audioToggle) {
+        audioToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
+    });
+
+    speechToggle.addEventListener('click', () => {
+      // Only allow toggling speech if audio is enabled
+      if (!this.have_audio) return;
+
+      const newState = !this.have_speech_assistive;
+      this.have_speech_assistive = newState;
+      this.game.have_speech_assistive = newState;
+      localStorage.setItem('have_speech_assistive', newState);
+      this.updateToggleState(speechToggle, newState);
+
+      // Also update the original toggle for compatibility
+      const originalSpeechToggle = document.querySelector(".speech-toggle");
+      if (originalSpeechToggle) {
+        originalSpeechToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
+    });
+
+    visualToggle.addEventListener('click', () => {
+      const newState = !this.have_visual_cues;
+      this.have_visual_cues = newState;
+      this.game.have_visual_cues = newState;
+      localStorage.setItem('have_visual_cues', newState);
+      this.updateToggleState(visualToggle, newState);
+
+      // Also update the original toggle for compatibility
+      const originalVisualToggle = document.querySelector(".visual-toggle");
+      if (originalVisualToggle) {
+        originalVisualToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
+
+      // Force update of current game state if game has started
+      if (this.hasStarted && this.game.state.current === 'game') {
+        // Update the game state to reflect the new setting
+        const gameState = this.game.state.states.game;
+        if (gameState && gameState.gameSpace) {
+          // Force redraw of current word if needed
+          const currentWord = gameState.gameSpace.currentWords[gameState.gameSpace.currentWordIndex];
+          if (currentWord) {
+            const letterIndex = currentWord.currentLetterIndex;
+            if (newState) {
+              currentWord.pushUp(letterIndex);
+            } else {
+              // Reset position if visual cues are disabled
+              currentWord.pushDown(letterIndex);
+            }
+          }
+        }
+      }
+    });
+
+    keyboardToggleNew.addEventListener('click', () => {
+      const morseBoard = document.getElementById('morseboard');
+      if (!morseBoard) return;
+
+      const isCurrentlyHidden = morseBoard.classList.contains('hidden');
+      const newState = isCurrentlyHidden; // Toggle to opposite of current state
+
+      morseBoard.classList.toggle('hidden');
+
+      // Store preference in localStorage
+      localStorage.setItem('morseboard_hidden', !newState);
+
+      // Update toggle state
+      this.updateToggleState(keyboardToggleNew, newState);
+
+      // Also update the original toggle for compatibility
+      const keyboardToggle = document.querySelector(".keyboard-toggle");
+      if (keyboardToggle) {
+        keyboardToggle.classList[!newState ? "add" : "remove"]("disabled");
+      }
+
+      // Adjust the game canvas height when the morse board is hidden/shown
+      if (this.game && this.game.scale) {
+        // Give a small delay to allow the DOM to update
+        setTimeout(() => {
+          this.game.scale.setGameSize(this.game.width, this.game.height);
+          // Force a resize event to update the layout
+          window.dispatchEvent(new Event('resize'));
+        }, 100);
+      }
+    });
+
+    oneSwitchToggleNew.addEventListener('click', () => {
+      // Get the current one-switch mode state
+      const currentMode = localStorage.getItem("one_switch_mode") === "true";
+      const newState = !currentMode;
+
+      // Use the global function to toggle one-switch mode
+      const success = window.GameApp.toggleOneSwitchMode(newState);
+
+      // Update toggle state
+      this.updateToggleState(oneSwitchToggleNew, newState);
+
+      // Also update the original toggle for compatibility
+      const oneSwitchToggle = document.querySelector(".one-switch-toggle");
+      if (oneSwitchToggle) {
+        const icon = oneSwitchToggle.querySelector('i');
+        if (icon) {
+          icon.className = newState ? 'fa fa-2x fa-toggle-on' : 'fa fa-2x fa-toggle-off';
+        }
+        oneSwitchToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
+
+      // If we're not in game state, show a message but still save the preference
+      if (!success && this.game.state.current !== 'game') {
+        console.log("Not in game state, preference saved but not applied yet");
+        alert("One-switch mode preference saved. It will be applied when you start the game.");
+      }
+    });
+
+    consentToggleNew.addEventListener('click', () => {
+      const current = getBoolFromLocalStore(TRACKING_ALLOWED_KEY);
+      const newState = !current;
+      localStorage.setItem(TRACKING_ALLOWED_KEY, newState);
+      this.updateToggleState(consentToggleNew, newState);
+
+      // Also update the original toggle for compatibility
+      const trackingToggle = document.querySelector(".consent-toggle");
+      if (trackingToggle) {
+        trackingToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
+    });
+
+    // Add event listeners for buttons
+    resetButtonNew.addEventListener('click', () => {
+      this.clearProgress();
+    });
+
+    statsButtonNew.addEventListener('click', () => {
+      this.showStatistics();
+    });
+  }
+
+  updateToggleState(toggleElement, isActive) {
+    const toggleSwitch = toggleElement.querySelector('.toggle-switch');
+    if (isActive) {
+      toggleSwitch.classList.add('active');
+    } else {
+      toggleSwitch.classList.remove('active');
+    }
   }
 
   async sendProgress() {
@@ -342,21 +606,38 @@ class TitleState {
         letterData: JSON.parse(letterData)
       }
 
-      // Use the new API endpoint
-      await fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies in the request
-        body: JSON.stringify(data),
-      })
+      // Check if we're running in development mode by checking the URL
+      const isDevelopment = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1';
 
-      console.log('Progress Sent')
+      if (isDevelopment) {
+        // In development mode, just log the data instead of sending to API
+        console.log('Analytics data (not sent in development mode):', data);
+      } else {
+        // Only try to send analytics in production
+        try {
+          const response = await fetch('/api/analytics', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies in the request
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+        } catch (fetchError) {
+          console.warn('Failed to send analytics data:', fetchError);
+        }
+      }
+
+      console.log('Progress handling completed')
     } catch (e) {
       // We swallow the error and warn because
       // collecting analytics shouldn't break the game
-      console.warn(e)
+      console.warn('Error in sendProgress:', e)
     }
   }
 
