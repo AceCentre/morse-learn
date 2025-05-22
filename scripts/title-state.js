@@ -140,6 +140,7 @@ class TitleState {
     let trackingToggle = document.querySelector(".consent-toggle");
     let statsButton = document.querySelector(".stats-button");
     let keyboardToggle = document.querySelector(".keyboard-toggle");
+    let oneSwitchToggle = document.querySelector(".one-switch-toggle");
 
     // Make the display match the initial state
     audioToggle.classList.add(initialAudio ? 'noop' : 'disabled')
@@ -311,6 +312,53 @@ class TitleState {
     }
 
     keyboardToggle.addEventListener('click', onKeyboardToggle, true);
+
+    // Add one-switch mode toggle handler
+    const onOneSwitchToggle = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      console.log("One-switch toggle clicked");
+
+      // Get the current one-switch mode state
+      const currentMode = localStorage.getItem("one_switch_mode") === "true";
+      const newMode = !currentMode;
+
+      // Use the global function to toggle one-switch mode
+      const success = window.GameApp.toggleOneSwitchMode(newMode);
+
+      // Update toggle button appearance regardless of success
+      const icon = oneSwitchToggle.querySelector('i');
+      if (icon) {
+        icon.className = newMode ? 'fa fa-2x fa-toggle-on' : 'fa fa-2x fa-toggle-off';
+      }
+      oneSwitchToggle.classList[newMode ? "remove" : "add"]("disabled");
+
+      // If we're not in game state, show a message but still save the preference
+      if (!success && this.game.state.current !== 'game') {
+        console.log("Not in game state, preference saved but not applied yet");
+        alert("One-switch mode preference saved. It will be applied when you start the game.");
+      }
+    };
+
+    // Initialize one-switch mode toggle from localStorage
+    const oneSwitchMode = getBoolFromLocalStore('one_switch_mode');
+
+    // Store the current mode in the game object for access across states
+    this.game.oneSwitchMode = oneSwitchMode;
+
+    // Update the toggle button appearance
+    if (oneSwitchMode && oneSwitchToggle) {
+      const icon = oneSwitchToggle.querySelector('i');
+      if (icon) {
+        icon.className = 'fa fa-2x fa-toggle-on';
+      }
+      oneSwitchToggle.classList.remove("disabled");
+    } else if (oneSwitchToggle) {
+      oneSwitchToggle.classList.add("disabled");
+    }
+
+    oneSwitchToggle.addEventListener('click', onOneSwitchToggle, true);
 
     // Send progress to the server every
     // 60 seconds if consent is turned on

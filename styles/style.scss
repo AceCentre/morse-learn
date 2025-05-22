@@ -194,6 +194,18 @@ canvas {
   flex-basis: 100%;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.progress-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 5px;
+  width: 0%;
+  background-color: #00a651; /* Green color */
+  transition: width 0.05s linear;
+  border-radius: 0 0 0 10px;
 }
 
 .key-container {
