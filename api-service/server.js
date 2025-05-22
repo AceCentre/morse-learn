@@ -22,13 +22,18 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'http://localhost:1234', // Parcel dev server
-      'http://127.0.0.1:1234'  // Parcel dev server alternative
+      'http://127.0.0.1:1234',  // Parcel dev server alternative
+      'https://morse-learn-j7cue.ondigitalocean.app', // DigitalOcean app URL
+      'https://morse-learn.acecentre.net' // Custom domain
     ];
 
     // If deployed on the same domain, the origin will be the app URL
     if (process.env.APP_URL) {
       allowedOrigins.push(process.env.APP_URL);
     }
+
+    console.log('Request origin:', origin);
+    console.log('Allowed origins:', allowedOrigins);
 
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
