@@ -125,14 +125,9 @@ class Word {
       let hint;
       const hintOffset = config.hints.hintOffset || 120;
 
-      // Use the same positioning logic as for the letters
-      let hintX;
-      if (this.myLetters.length === 1) {
-        hintX = startX;
-      } else {
-        hintX = startX + (i * config.app.wordBrickSize);
-      }
-
+      // Always position the hint directly under the letter
+      // Use the exact same x position as the letter for perfect alignment
+      const hintX = letterX;
       const hintY = config.GLOBALS.worldCenter + hintOffset;
 
       try {
@@ -153,7 +148,7 @@ class Word {
       hint.alpha = 0;
 
       // Log for debugging
-      console.log(`Creating hint image for letter: ${name.toLowerCase()} at position ${startX + (i * config.app.wordBrickSize)}`);
+      console.log(`Creating hint image for letter: ${name.toLowerCase()} at position ${letterX}`);
 
       // Double-check the texture loaded correctly
       if (!hint.texture || hint.texture.baseTexture.hasLoaded === false) {
@@ -165,27 +160,74 @@ class Word {
       // Hint Text
       // Use the letter name directly since we're using the 'nohint' image for all letters
       let hintName = name;
-      let hintText = this.game.add.text(config.app.wordBrickSize, config.GLOBALS.worldBottom - 10, hintName);
+
+      // Position the hint text at the same x-coordinate as the letter for alignment
+      // Position it below the visual cue mnemonic
+      const initialHintOffset = config.hints.hintOffset || 120;
+      const initialVisualCueHeight = 150; // Approximate height of the visual cue image
+      const textY = config.GLOBALS.worldCenter + initialHintOffset + initialVisualCueHeight + 20; // Position it below the visual cue
+      let hintText = this.game.add.text(letterX, textY, hintName);
       hintText.font = config.typography.font;
       hintText.fontSize = config.hints.hintTextSize;
       hintText.fontWeight = 700;
       hintText.align = 'center';
-      hintText.anchor.set(0.5, 0.5);
+      hintText.anchor.set(0.5, 0.5); // Center the text horizontally
       hintText.addColor('#F1E4D4', 0);
       hintText.alpha = 0;
-      const hintTextWidth = hintText.width / 2;
 
-      // Just get width of first letter for underline
-      let hintLetter = this.game.add.text(config.app.wordBrickSize, config.GLOBALS.worldBottom - 10, hintName[0]);
-      hintLetter.visible = false;
-      hintLetter.font = config.typography.font;
-      hintLetter.fontSize = config.hints.hintTextSize;
-      hintLetter.fontWeight = 700;
+      // Get the morse code for this letter
+      const morseCode = this.parent.parent.morseDictionary[this.myLetters[i]];
 
+      // Create a visual representation of the morse code (dots and dashes)
       let hintLine = this.game.add.graphics(0, 0);
       hintLine.beginFill(0xF1E4D4, 1);
-      hintLine.drawRect(hintLetter.position.x - hintTextWidth, hintLetter.position.y + 20, hintLetter.width, 4);
-      hintLine.anchor.set(0.5, 0.5);
+
+      // Calculate the position for the morse code indicator
+      // Position it below the hint text
+      const morseY = textY + 40; // Position it below the hint text
+
+      // Draw the complete morse code representation
+      if (morseCode) {
+        const dotSize = 8; // Size of the dot
+        const dashWidth = 24; // Width of the dash
+        const dashHeight = 8; // Height of the dash
+        const spacing = 12; // Spacing between elements
+
+        // Calculate total width of the morse code visualization
+        let totalWidth = 0;
+        for (let j = 0; j < morseCode.length; j++) {
+          if (morseCode[j] === '.') {
+            totalWidth += dotSize;
+          } else if (morseCode[j] === '-') {
+            totalWidth += dashWidth;
+          }
+
+          // Add spacing between elements (except after the last one)
+          if (j < morseCode.length - 1) {
+            totalWidth += spacing;
+          }
+        }
+
+        // Start drawing from the left edge of the total width
+        let startX = letterX - (totalWidth / 2);
+
+        // Draw each element of the morse code
+        for (let j = 0; j < morseCode.length; j++) {
+          if (morseCode[j] === '.') {
+            // Draw a dot (circle)
+            hintLine.drawCircle(startX + (dotSize / 2), morseY, dotSize);
+            startX += dotSize + spacing;
+          } else if (morseCode[j] === '-') {
+            // Draw a dash (rectangle)
+            hintLine.drawRect(startX, morseY - 4, dashWidth, dashHeight);
+            startX += dashWidth + spacing;
+          }
+        }
+      } else {
+        // Fallback if no morse code is available
+        hintLine.drawRect(letterX - 10, morseY - 4, 20, 4);
+      }
+
       hintLine.alpha = 0;
       hintLine.endFill();
 
@@ -246,25 +288,98 @@ class Word {
         await delay(50);
 
         // Position the hint image directly under the current letter
-        // First update the x position to match the letter
+        // Make sure the x position exactly matches the letter for proper alignment
         hintImage.position.x = currentLetterObj.position.x;
 
         // Position the hint image below the letter (with a small offset)
-        const hintOffset = config.hints.hintOffset || 120;
+        const imageHintOffset = config.hints.hintOffset || 120;
 
         // If the letter is pushed up, position the hint below it
         if (this.parent.letterScoreDict[currentLetter] < config.app.LEARNED_THRESHOLD) {
-          hintImage.position.y = config.GLOBALS.worldTop + hintOffset;
+          hintImage.position.y = config.GLOBALS.worldTop + imageHintOffset;
         } else {
-          hintImage.position.y = config.GLOBALS.worldCenter + hintOffset;
+          hintImage.position.y = config.GLOBALS.worldCenter + imageHintOffset;
         }
 
         // Show the hint image with increased delay to ensure texture is loaded
         this.game.add.tween(hintImage).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true, 100);
 
         // Also show the hint text and underline for better visibility
+        // Position the hint text at the same x-coordinate as the letter
+        this.hints[this.currentLetterIndex].text.position.x = currentLetterObj.position.x;
+
+        // Position the hint text below the visual cue mnemonic
+        const textHintOffset = config.hints.hintOffset || 120;
+        const visualCueHeight = 150; // Approximate height of the visual cue image
+
+        // If the letter is pushed up, position the hint text below the pushed up letter and visual cue
+        let textY;
+        if (this.parent.letterScoreDict[currentLetter] < config.app.LEARNED_THRESHOLD) {
+          textY = config.GLOBALS.worldTop + textHintOffset + visualCueHeight + 20;
+        } else {
+          textY = config.GLOBALS.worldCenter + textHintOffset + visualCueHeight + 20;
+        }
+
+        this.hints[this.currentLetterIndex].text.position.y = textY;
         this.game.add.tween(this.hints[this.currentLetterIndex].text).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
-        this.game.add.tween(this.hints[this.currentLetterIndex].underline).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
+
+        // Update the underline position and shape based on the morse code
+        const underline = this.hints[this.currentLetterIndex].underline;
+        underline.clear();
+        underline.beginFill(0xF1E4D4, 1);
+
+        // Get the morse code for this letter
+        const morseCode = currentLetterObj.morse;
+        const letterX = currentLetterObj.position.x;
+
+        // Calculate the position for the morse code indicator
+        // Position it below the hint text
+        const morseY = textY + 40; // Position it below the hint text
+
+        // Draw the complete morse code representation
+        if (morseCode) {
+          const dotSize = 8; // Size of the dot
+          const dashWidth = 24; // Width of the dash
+          const dashHeight = 8; // Height of the dash
+          const spacing = 12; // Spacing between elements
+
+          // Calculate total width of the morse code visualization
+          let totalWidth = 0;
+          for (let j = 0; j < morseCode.length; j++) {
+            if (morseCode[j] === '.') {
+              totalWidth += dotSize;
+            } else if (morseCode[j] === '-') {
+              totalWidth += dashWidth;
+            }
+
+            // Add spacing between elements (except after the last one)
+            if (j < morseCode.length - 1) {
+              totalWidth += spacing;
+            }
+          }
+
+          // Start drawing from the left edge of the total width
+          let startX = letterX - (totalWidth / 2);
+
+          // Draw each element of the morse code
+          for (let j = 0; j < morseCode.length; j++) {
+            if (morseCode[j] === '.') {
+              // Draw a dot (circle)
+              underline.drawCircle(startX + (dotSize / 2), morseY, dotSize);
+              startX += dotSize + spacing;
+            } else if (morseCode[j] === '-') {
+              // Draw a dash (rectangle)
+              underline.drawRect(startX, morseY - 4, dashWidth, dashHeight);
+              startX += dashWidth + spacing;
+            }
+          }
+        } else {
+          // Fallback if no morse code is available
+          underline.drawRect(letterX - 10, morseY - 4, 20, 4);
+        }
+
+        underline.endFill();
+        this.game.add.tween(underline).to({ alpha: 1 }, 200, Phaser.Easing.Linear.In, true);
       } else {
         // Make sure hints are hidden when visual cues are disabled
         this.game.add.tween(this.hints[this.currentLetterIndex].image).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
@@ -293,10 +408,10 @@ class Word {
 
         // If this is the current letter, also update the hint image position
         if (i === this.currentLetterIndex && this.hints[i] && this.hints[i].image) {
-          const hintOffset = config.hints.hintOffset || 120;
+          const pushUpHintOffset = config.hints.hintOffset || 120;
           // Position the hint image below the letter
           this.hints[i].image.position.x = this.letterObjects[i].position.x;
-          this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldTop + hintOffset }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
+          this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldTop + pushUpHintOffset }, 400, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_END_DELAY + 200);
         }
       } else {
         // Make sure they stay in the center when visual cues are disabled
@@ -317,8 +432,11 @@ class Word {
     // Update the hint image position to match the letter's x position
     this.hints[i].image.position.x = this.letterObjects[i].position.x;
 
-    const hintOffset = config.hints.hintOffset || 120;
-    this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldCenter + hintOffset, alpha: 0 }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
+    // Update the hint text position to match the letter
+    this.hints[i].text.position.x = this.letterObjects[i].position.x;
+
+    const pushDownHintOffset = config.hints.hintOffset || 120;
+    this.game.add.tween(this.hints[i].image).to({ y: config.GLOBALS.worldCenter + pushDownHintOffset, alpha: 0 }, 200, Phaser.Easing.Exponential.Out, true, config.animations.SLIDE_START_DELAY);
     this.game.add.tween(this.hints[i].text).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
     this.game.add.tween(this.hints[i].underline).to({ alpha: 0 }, 200, Phaser.Easing.Linear.In, true);
   }

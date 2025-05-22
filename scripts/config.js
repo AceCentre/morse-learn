@@ -95,7 +95,15 @@ const config = {
       headerSpacing: -10,
       storageKey: 'savedLetters',
       letters: ['e', 't', 'a', 'i', 'm', 's', 'o', 'h', 'n', 'c', 'r', 'd', 'u', 'k', 'l', 'f', 'b', 'p', 'g', 'j', 'v', 'q', 'w', 'x', 'y', 'z'],
-      words: words
+      words: words,
+      nextCourse: 'numbers'
+    },
+    numbers: {
+      name: 'Numbers',
+      headerSpacing: -10,
+      storageKey: 'savedNumbers',
+      letters: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      words: ['123', '456', '789', '012', '345', '678', '901', '234', '567', '890', '1234', '5678', '9012', '3456', '7890']
     },
     keyboard: {
       name: 'Keyboard Keys',

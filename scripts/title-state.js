@@ -453,8 +453,8 @@ class TitleState {
       this.updateToggleState(speechToggle, newState);
 
       // Also update the original toggle for compatibility
-      const speechToggle = document.querySelector(".speech-toggle");
-      speechToggle.classList[newState ? "remove" : "add"]("disabled");
+      const originalSpeechToggle = document.querySelector(".speech-toggle");
+      originalSpeechToggle.classList[newState ? "remove" : "add"]("disabled");
     });
 
     visualToggle.addEventListener('click', () => {
@@ -465,8 +465,8 @@ class TitleState {
       this.updateToggleState(visualToggle, newState);
 
       // Also update the original toggle for compatibility
-      const visualToggle = document.querySelector(".visual-toggle");
-      visualToggle.classList[newState ? "remove" : "add"]("disabled");
+      const originalVisualToggle = document.querySelector(".visual-toggle");
+      originalVisualToggle.classList[newState ? "remove" : "add"]("disabled");
 
       // Force update of current game state if game has started
       if (this.hasStarted && this.game.state.current === 'game') {
@@ -594,21 +594,38 @@ class TitleState {
         letterData: JSON.parse(letterData)
       }
 
-      // Use the new API endpoint
-      await fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies in the request
-        body: JSON.stringify(data),
-      })
+      // Check if we're running in development mode by checking the URL
+      const isDevelopment = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1';
 
-      console.log('Progress Sent')
+      if (isDevelopment) {
+        // In development mode, just log the data instead of sending to API
+        console.log('Analytics data (not sent in development mode):', data);
+      } else {
+        // Only try to send analytics in production
+        try {
+          const response = await fetch('/api/analytics', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies in the request
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+        } catch (fetchError) {
+          console.warn('Failed to send analytics data:', fetchError);
+        }
+      }
+
+      console.log('Progress handling completed')
     } catch (e) {
       // We swallow the error and warn because
       // collecting analytics shouldn't break the game
-      console.warn(e)
+      console.warn('Error in sendProgress:', e)
     }
   }
 
