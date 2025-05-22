@@ -29,6 +29,7 @@ class CongratulationsState {
   init(params) {
     this.letterScoreDict = params.letterScoreDict || {};
     this.analyticsData = params.analyticsData || null;
+    this.currentCourse = params.currentCourse || 'alphabet';
   }
 
   create() {
@@ -81,8 +82,19 @@ class CongratulationsState {
   }
 
   createCongratulationsText() {
-    // Main congratulations text
-    const congratsText = "Congratulations!\nYou've learned\nMorse Code!";
+    // Get the current course config
+    const currentCourseConfig = config.courses[this.currentCourse];
+
+    // Main congratulations text - customize based on course
+    let congratsText;
+    if (this.currentCourse === 'alphabet') {
+      congratsText = "Congratulations!\nYou've learned the\nMorse Code Alphabet!";
+    } else if (this.currentCourse === 'numbers') {
+      congratsText = "Congratulations!\nYou've learned\nMorse Code Numbers!";
+    } else {
+      congratsText = "Congratulations!\nYou've completed\nthis Morse Code level!";
+    }
+
     let title = this.game.add.text(
       this.game.world.centerX,
       this.game.world.centerY + (config.title.titleOffset),
@@ -103,7 +115,15 @@ class CongratulationsState {
       key => this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD
     ).length;
 
-    const statsText = `You've mastered ${learnedLetters} out of ${totalLetters} letters!`;
+    // Customize stats text based on course
+    let itemType = 'letters';
+    if (this.currentCourse === 'numbers') {
+      itemType = 'numbers';
+    } else if (this.currentCourse === 'keyboard') {
+      itemType = 'keys';
+    }
+
+    const statsText = `You've mastered ${learnedLetters} out of ${totalLetters} ${itemType}!`;
     let stats = this.game.add.text(
       this.game.world.centerX,
       this.game.world.centerY + config.title.titleOffset + 150,
@@ -181,17 +201,51 @@ class CongratulationsState {
   }
 
   createButtons() {
-    // Continue button
-    const continueText = "Continue Learning";
+    // Check if there's a next course defined
+    const currentCourseConfig = config.courses[this.currentCourse];
+    const hasNextCourse = currentCourseConfig && currentCourseConfig.nextCourse;
+
+    // Position variables
+    let buttonY = this.game.world.height - 150;
+    const buttonSpacing = 70;
+
+    if (hasNextCourse) {
+      // Next Level button
+      const nextLevelText = "Next Level: Numbers";
+      let nextLevelButton = this.game.add.text(
+        this.game.world.centerX,
+        buttonY,
+        nextLevelText,
+        {
+          align: "center",
+        }
+      );
+      nextLevelButton.fontSize = config.title.startButtonSize;
+      nextLevelButton.fill = "#F1E4D4";
+      nextLevelButton.anchor.setTo(0.5);
+      nextLevelButton.font = config.typography.font;
+      nextLevelButton.inputEnabled = true;
+      nextLevelButton.events.onInputDown.add(this.goToNextLevel, this);
+
+      // Animate the next level button
+      const nextLevelTween = this.game.add.tween(nextLevelButton)
+        .to({ alpha: 0.6 }, 600, "Linear", true, 0, -1);
+      nextLevelTween.yoyo(true, 0);
+
+      buttonY += buttonSpacing;
+    }
+
+    // Continue button (only show if there's no next course or as a secondary option)
+    const continueText = hasNextCourse ? "Continue Current Level" : "Continue Learning";
     let continueButton = this.game.add.text(
       this.game.world.centerX,
-      this.game.world.height - 150,
+      buttonY,
       continueText,
       {
         align: "center",
       }
     );
-    continueButton.fontSize = config.title.startButtonSize;
+    continueButton.fontSize = hasNextCourse ? config.title.startButtonSize * 0.8 : config.title.startButtonSize;
     continueButton.fill = "#F1E4D4";
     continueButton.anchor.setTo(0.5);
     continueButton.font = config.typography.font;
@@ -203,11 +257,13 @@ class CongratulationsState {
       .to({ alpha: 0.6 }, 600, "Linear", true, 0, -1);
     continueTween.yoyo(true, 0);
 
+    buttonY += buttonSpacing;
+
     // View stats button
     const statsText = "View Statistics";
     let statsButton = this.game.add.text(
       this.game.world.centerX,
-      this.game.world.height - 80,
+      buttonY,
       statsText,
       {
         align: "center",
@@ -237,8 +293,40 @@ class CongratulationsState {
   }
 
   continueLearning() {
-    // Return to the game state
+    // Return to the game state with the current course
     this.game.state.start('game', true, false, this.letterScoreDict);
+  }
+
+  goToNextLevel() {
+    // Get the next course from the current course config
+    const currentCourseConfig = config.courses[this.currentCourse];
+    if (currentCourseConfig && currentCourseConfig.nextCourse) {
+      const nextCourseName = currentCourseConfig.nextCourse;
+      const nextCourse = config.courses[nextCourseName];
+
+      if (nextCourse) {
+        // Create a new Course instance with the next course config
+        const Course = require('./course').Course;
+        const newCourse = new Course(nextCourse);
+
+        // Update the global course
+        window.GameApp.course = newCourse;
+
+        // Reset the letter score dictionary for the new course
+        const newLetterScoreDict = {};
+        newCourse.lettersToLearn.forEach(letter => {
+          newLetterScoreDict[letter] = 0;
+        });
+
+        // Save the current course progress before switching
+        if (typeof Storage !== "undefined") {
+          localStorage.setItem(currentCourseConfig.storageKey, JSON.stringify(this.letterScoreDict));
+        }
+
+        // Start the game with the new course
+        this.game.state.start('game', true, false, newLetterScoreDict);
+      }
+    }
   }
 
   showStatistics() {
@@ -301,7 +389,15 @@ class CongratulationsState {
       key => this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD
     ).length;
 
-    summary.textContent = `You've mastered ${learnedLetters} out of ${totalLetters} letters. Here's a breakdown of your progress:`;
+    // Customize stats text based on course
+    let itemType = 'letters';
+    if (this.currentCourse === 'numbers') {
+      itemType = 'numbers';
+    } else if (this.currentCourse === 'keyboard') {
+      itemType = 'keys';
+    }
+
+    summary.textContent = `You've mastered ${learnedLetters} out of ${totalLetters} ${itemType}. Here's a breakdown of your progress:`;
     container.appendChild(summary);
 
     // Create a table for letter statistics
@@ -316,7 +412,16 @@ class CongratulationsState {
     // Create table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    ['Letter', 'Status', 'Correct', 'Wrong', 'Accuracy'].forEach(text => {
+
+    // Customize header based on course
+    let firstColumnHeader = 'Letter';
+    if (this.currentCourse === 'numbers') {
+      firstColumnHeader = 'Number';
+    } else if (this.currentCourse === 'keyboard') {
+      firstColumnHeader = 'Key';
+    }
+
+    [firstColumnHeader, 'Status', 'Correct', 'Wrong', 'Accuracy'].forEach(text => {
       const th = document.createElement('th');
       th.textContent = text;
       th.style.cssText = `
