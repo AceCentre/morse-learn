@@ -16,16 +16,13 @@ const words = require('./words');
 import { getClientHeight, getKeyboardHeight, getGameAreaHeight } from './util'
 
 const isTouch = 'ontouchstart' in document.documentElement;
+// Initialize isLandscape, but this will be updated dynamically in App.handleResize()
 const isLandscape = window.innerWidth > window.innerHeight;
 
 const breakPointerSwitcher = ({ breakpoint = 500, below, above }) => {
-
   const width = document.body.clientWidth;
-
   if(width > breakpoint) return above;
-
   return below;
-
 }
 
 // Cap the width at double the height

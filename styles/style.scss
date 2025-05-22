@@ -33,6 +33,21 @@ body {
   min-height: 100%;
 }
 
+/* Landscape orientation adjustments */
+@media (orientation: landscape) {
+  .wrapper {
+    margin-top: 5%;
+  }
+
+  .title {
+    margin-bottom: 20px;
+  }
+
+  .wrapper p {
+    margin-bottom: 20px;
+  }
+}
+
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   select,
   textarea,
@@ -181,6 +196,13 @@ canvas {
   &.hidden {
     display: none !important;
   }
+
+  // Adjust for landscape orientation
+  @media (orientation: landscape) {
+    height: 25vh;
+    min-height: 150px;
+    max-height: 180px;
+  }
 }
 
 
@@ -236,10 +258,10 @@ canvas {
   justify-content: center;
 }
 
-// Fallback for landscape
+// Message for landscape (now hidden by default)
 #landscape {
   color: $beige;
-  display: none;
+  display: none; // Hidden by default, controlled by JavaScript
   font-size: 30px;
   left: 50%;
   padding: 0 20px;
@@ -248,6 +270,7 @@ canvas {
   transform: translate(-50%, -50%);
   top: 50%;
   width: 100%;
+  z-index: 1000; // Ensure it's above other elements
 }
 
 #button {

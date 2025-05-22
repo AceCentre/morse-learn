@@ -107,7 +107,7 @@ class App {
     });
   }
 
-  // Resize scaling, based on device, force orientation
+  // Resize scaling, based on device, support both orientations
   determineScale() {
     this.game.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
 
@@ -119,34 +119,16 @@ class App {
     // Initial resize
     this.handleResize();
 
-    // Only if mobile
-    if (!this.game.device.desktop) {
-      this.game.scale.forceOrientation(false, true);
-
-      // Landscape orientation
-      this.game.scale.enterIncorrectOrientation.add(() => {
-        this.game.world.alpha = 0;
-        document.getElementById('landscape').style.display = 'block';
-
-        if (this.game.state.current === 'title') {
-          document.getElementById('button').style.display = 'none';
-          document.getElementById('overlay').style.display = 'none';
-        }
-      });
-
-      // Portrait orientation
-      this.game.scale.leaveIncorrectOrientation.add(() => {
-        this.game.world.alpha = 1;
-        document.getElementById('landscape').style.display = 'none';
-
-        if (this.game.state.current === 'title') {
-          // document.getElementById('button').style.display = 'block';
-          document.getElementById('overlay').style.display = 'block';
-        }
-      });
-    } else {
+    // For desktop, use SHOW_ALL scale mode
+    if (this.game.device.desktop) {
       this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     }
+
+    // Make sure the landscape message is hidden
+    document.getElementById('landscape').style.display = 'none';
+
+    // Always show the game content
+    this.game.world.alpha = 1;
   }
 
   // Handle window resize
@@ -156,6 +138,9 @@ class App {
     // Update the game height based on the current window size
     const newHeight = getClientHeight();
     config.GLOBALS.appHeight = newHeight;
+
+    // Update isLandscape flag based on current orientation
+    config.GLOBALS.isLandscape = window.innerWidth > window.innerHeight;
 
     // Update world positions
     const keyboardHeight = getKeyboardHeight();
@@ -172,6 +157,26 @@ class App {
     if (this.game.state.current === 'game' && this.game.state.states.game.header) {
       const header = this.game.state.states.game.header;
       header.updatePosition();
+    }
+
+    // Adjust UI elements based on orientation if needed
+    this.adjustUIForOrientation();
+  }
+
+  // Adjust UI elements based on current orientation
+  adjustUIForOrientation() {
+    // Get current orientation
+    const isLandscape = window.innerWidth > window.innerHeight;
+
+    // Adjust UI elements as needed for different orientations
+    const morseBoard = document.getElementById('morseboard');
+    if (morseBoard) {
+      // In landscape mode on small screens, we might want to adjust the morse board height
+      if (isLandscape && window.innerWidth < 768) {
+        morseBoard.style.maxHeight = '180px';
+      } else {
+        morseBoard.style.maxHeight = '220px';
+      }
     }
   }
 
