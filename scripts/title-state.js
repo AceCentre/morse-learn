@@ -142,11 +142,11 @@ class TitleState {
     let keyboardToggle = document.querySelector(".keyboard-toggle");
     let oneSwitchToggle = document.querySelector(".one-switch-toggle");
 
-    // Make the display match the initial state
-    audioToggle.classList.add(initialAudio ? 'noop' : 'disabled')
-    speechToggle.classList.add(initialSpeechAssistive ? 'noop' : 'disabled')
-    visualToggle.classList.add(initialVisualCues ? 'noop' : 'disabled')
-    trackingToggle.classList.add(initialTrackingConsent ? 'noop' : 'disabled')
+    // Make the display match the initial state - check if elements exist first
+    if (audioToggle) audioToggle.classList.add(initialAudio ? 'noop' : 'disabled');
+    if (speechToggle) speechToggle.classList.add(initialSpeechAssistive ? 'noop' : 'disabled');
+    if (visualToggle) visualToggle.classList.add(initialVisualCues ? 'noop' : 'disabled');
+    if (trackingToggle) trackingToggle.classList.add(initialTrackingConsent ? 'noop' : 'disabled');
 
     // Setup the settings button and modal
     this.setupSettingsModal(initialAudio, initialSpeechAssistive, initialVisualCues, initialTrackingConsent)
@@ -439,7 +439,9 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const audioToggle = document.querySelector(".audio-toggle");
-      audioToggle.classList[newState ? "remove" : "add"]("disabled");
+      if (audioToggle) {
+        audioToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
     });
 
     speechToggle.addEventListener('click', () => {
@@ -454,7 +456,9 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const originalSpeechToggle = document.querySelector(".speech-toggle");
-      originalSpeechToggle.classList[newState ? "remove" : "add"]("disabled");
+      if (originalSpeechToggle) {
+        originalSpeechToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
     });
 
     visualToggle.addEventListener('click', () => {
@@ -466,7 +470,9 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const originalVisualToggle = document.querySelector(".visual-toggle");
-      originalVisualToggle.classList[newState ? "remove" : "add"]("disabled");
+      if (originalVisualToggle) {
+        originalVisualToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
 
       // Force update of current game state if game has started
       if (this.hasStarted && this.game.state.current === 'game') {
@@ -505,7 +511,9 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const keyboardToggle = document.querySelector(".keyboard-toggle");
-      keyboardToggle.classList[!newState ? "add" : "remove"]("disabled");
+      if (keyboardToggle) {
+        keyboardToggle.classList[!newState ? "add" : "remove"]("disabled");
+      }
 
       // Adjust the game canvas height when the morse board is hidden/shown
       if (this.game && this.game.scale) {
@@ -531,11 +539,13 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const oneSwitchToggle = document.querySelector(".one-switch-toggle");
-      const icon = oneSwitchToggle.querySelector('i');
-      if (icon) {
-        icon.className = newState ? 'fa fa-2x fa-toggle-on' : 'fa fa-2x fa-toggle-off';
+      if (oneSwitchToggle) {
+        const icon = oneSwitchToggle.querySelector('i');
+        if (icon) {
+          icon.className = newState ? 'fa fa-2x fa-toggle-on' : 'fa fa-2x fa-toggle-off';
+        }
+        oneSwitchToggle.classList[newState ? "remove" : "add"]("disabled");
       }
-      oneSwitchToggle.classList[newState ? "remove" : "add"]("disabled");
 
       // If we're not in game state, show a message but still save the preference
       if (!success && this.game.state.current !== 'game') {
@@ -552,7 +562,9 @@ class TitleState {
 
       // Also update the original toggle for compatibility
       const trackingToggle = document.querySelector(".consent-toggle");
-      trackingToggle.classList[newState ? "remove" : "add"]("disabled");
+      if (trackingToggle) {
+        trackingToggle.classList[newState ? "remove" : "add"]("disabled");
+      }
     });
 
     // Add event listeners for buttons
