@@ -27,63 +27,105 @@ import assetPathsModule from './asset-paths';
 class App {
 
   constructor() {
-    this.game = null;
-    this.downEvent = null;
-    this.modalShow = false;
+    console.log('App constructor called');
 
-    // Make assetPaths available to the whole class
-    this.assetPaths = assetPathsModule;
+    try {
+      this.game = null;
+      this.downEvent = null;
+      this.modalShow = false;
 
-    this.course = new Course(config.courses[config.course]);
+      // Make assetPaths available to the whole class
+      this.assetPaths = assetPathsModule;
 
-    // Make assetPaths available globally
-    window.GameApp = window.GameApp || {};
-    window.GameApp.assetPaths = assetPathsModule;
-
-    // Add global function to toggle one-switch mode
-    window.GameApp.toggleOneSwitchMode = (enable) => {
-      // Store the setting in localStorage
-      if (typeof Storage !== "undefined") {
-        localStorage.setItem("one_switch_mode", enable);
+      // Initialize course with error handling
+      try {
+        if (config.courses && config.course && config.courses[config.course]) {
+          console.log('Creating course from config:', config.course);
+          this.course = new Course(config.courses[config.course]);
+        } else {
+          console.error('Course config not found, creating default course');
+          this.course = {
+            lettersToLearn: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+            headerSpacing: 5,
+            storageKey: 'morse-learn-progress'
+          };
+        }
+      } catch (error) {
+        console.error('Error creating course:', error);
+        this.course = {
+          lettersToLearn: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+          headerSpacing: 5,
+          storageKey: 'morse-learn-progress'
+        };
       }
 
-      // Update the game state if it exists
-      if (this.game && this.game.state) {
-        // Store in game object for access across states
-        this.game.oneSwitchMode = enable;
+      // Make assetPaths available globally
+      window.GameApp = window.GameApp || {};
+      window.GameApp.assetPaths = assetPathsModule;
 
-        // If we're in the game state, update the morseBoard
-        if (this.game.state.current === 'game') {
-          const gameState = this.game.state.states.game;
-          if (gameState && gameState.gameSpace && gameState.gameSpace.morseBoard) {
-            gameState.gameSpace.morseBoard.toggleOneSwitchMode(enable);
-            return true;
+      // Add global function to toggle one-switch mode
+      window.GameApp.toggleOneSwitchMode = (enable) => {
+        // Store the setting in localStorage
+        if (typeof Storage !== "undefined") {
+          localStorage.setItem("one_switch_mode", enable);
+        }
+
+        // Update the game state if it exists
+        if (this.game && this.game.state) {
+          // Store in game object for access across states
+          this.game.oneSwitchMode = enable;
+
+          // If we're in the game state, update the morseBoard
+          if (this.game.state.current === 'game') {
+            const gameState = this.game.state.states.game;
+            if (gameState && gameState.gameSpace && gameState.gameSpace.morseBoard) {
+              gameState.gameSpace.morseBoard.toggleOneSwitchMode(enable);
+              return true;
+            }
           }
         }
+
+        return false;
+      };
+
+      // Handle clicking of modal
+      try {
+        const button = document.getElementById('button');
+        if (button) {
+          button.addEventListener('click', () => {
+            this.modalShow = this.modalShow ? false : true;
+            this.showModal();
+          }, false);
+        } else {
+          console.error('Button element not found');
+        }
+
+        // Deeplinking to /#about
+        if (window.location.hash === '#about') {
+          this.modalShow = true;
+          this.showModal();
+        }
+      } catch (error) {
+        console.error('Error setting up modal handlers:', error);
       }
-
-      return false;
-    };
-
-    // Handle clicking of modal
-    document.getElementById('button').addEventListener('click', () => {
-      this.modalShow = this.modalShow ? false : true;
-      this.showModal();
-    }, false);
-
-    // Deeplinking to /#about
-    if (window.location.hash === '#about') {
-      this.modalShow = true;
-      this.showModal();
+    } catch (error) {
+      console.error('Error in app constructor:', error);
     }
   }
 
   startGameApp() {
-    this.game = new Phaser.Game('100%', config.GLOBALS.appHeight, Phaser.CANVAS, '', {
-      resolution: config.GLOBALS.devicePixelRatio,
-      preload: this.preload,
-      create: this.create
-    });
+    console.log('Starting game app');
+
+    try {
+      this.game = new Phaser.Game('100%', config.GLOBALS.appHeight, Phaser.CANVAS, '', {
+        resolution: config.GLOBALS.devicePixelRatio,
+        preload: this.preload,
+        create: this.create
+      });
+      console.log('Game created successfully');
+    } catch (error) {
+      console.error('Error starting game app:', error);
+    }
   }
 
   // Determines starting device orientation
@@ -167,6 +209,7 @@ class App {
   adjustUIForOrientation() {
     // Get current orientation
     const isLandscape = window.innerWidth > window.innerHeight;
+    const isMobile = window.innerWidth < 480;
 
     // Adjust UI elements as needed for different orientations
     const morseBoard = document.getElementById('morseboard');
@@ -174,144 +217,251 @@ class App {
       // In landscape mode on small screens, we might want to adjust the morse board height
       if (isLandscape && window.innerWidth < 768) {
         morseBoard.style.maxHeight = '180px';
+      } else if (isMobile) {
+        morseBoard.style.maxHeight = '160px';
       } else {
         morseBoard.style.maxHeight = '220px';
       }
     }
+
+    // Update header position if the game is initialized
+    if (this.game && this.game.state && this.game.state.current === 'game' && this.game.state.states.game && this.game.state.states.game.header) {
+      this.game.state.states.game.header.updatePosition();
+    }
   }
 
   create() {
-    GameApp.enableLoadingModal(false)
+    console.log('App create method called');
 
-    this.game.stage.backgroundColor = config.app.backgroundColor;
-    this.game.stage.smoothed = config.app.smoothed;
-    GameApp.determineScale();
+    try {
+      GameApp.enableLoadingModal(false);
 
-    // Show about and settings buttons
-    document.getElementById('button').style.display = 'block';
-    document.getElementById('settings-button').style.display = 'block';
+      this.game.stage.backgroundColor = config.app.backgroundColor;
+      this.game.stage.smoothed = config.app.smoothed;
+      GameApp.determineScale();
 
-    this.game.state.add('title', new TitleState(this.game, GameApp.course));
-    this.game.state.add('intro', new IntroState(this.game));
-    this.game.state.add('game', new GameState(this.game, GameApp.course));
-    this.game.state.add('congratulations', new CongratulationsState(this.game, GameApp.course));
-    this.game.state.start('title');
+      // Show about and settings buttons
+      document.getElementById('button').style.display = 'block';
+      document.getElementById('settings-button').style.display = 'block';
+
+      // Make sure the course is properly initialized
+      if (!GameApp.course) {
+        console.log('Creating default course in app.js');
+        GameApp.course = {
+          lettersToLearn: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+          headerSpacing: 5,
+          storageKey: 'morse-learn-progress'
+        };
+      }
+
+      // Make sure the course is accessible to the game
+      this.game.course = GameApp.course;
+      console.log('Course initialized in app.js:', this.game.course);
+
+      // Add game states
+      console.log('Adding game states');
+      this.game.state.add('title', new TitleState(this.game, GameApp.course));
+      this.game.state.add('intro', new IntroState(this.game));
+      this.game.state.add('game', new GameState(this.game, GameApp.course));
+      this.game.state.add('congratulations', new CongratulationsState(this.game, GameApp.course));
+
+      // Start with the title state
+      console.log('Starting title state');
+      this.game.state.start('title');
+    } catch (error) {
+      console.error('Error in app create method:', error);
+    }
   }
 
   preload() {
-    GameApp.enableLoadingModal()
+    console.log('App preload method called');
 
-    // Images - using asset paths from asset-paths.js
-    this.game.load.image('a', GameApp.assetPaths.a);
-    this.game.load.image('b', GameApp.assetPaths.b);
-    this.game.load.image('c', GameApp.assetPaths.c);
-    this.game.load.image('d', GameApp.assetPaths.d);
-    this.game.load.image('e', GameApp.assetPaths.e);
-    this.game.load.image('f', GameApp.assetPaths.f);
-    this.game.load.image('g', GameApp.assetPaths.g);
-    this.game.load.image('h', GameApp.assetPaths.h);
-    this.game.load.image('i', GameApp.assetPaths.i);
-    this.game.load.image('j', GameApp.assetPaths.j);
-    this.game.load.image('k', GameApp.assetPaths.k);
-    this.game.load.image('l', GameApp.assetPaths.l);
-    this.game.load.image('m', GameApp.assetPaths.m);
-    this.game.load.image('n', GameApp.assetPaths.n);
-    this.game.load.image('o', GameApp.assetPaths.o);
-    this.game.load.image('p', GameApp.assetPaths.p);
-    this.game.load.image('q', GameApp.assetPaths.q);
-    this.game.load.image('r', GameApp.assetPaths.r);
-    this.game.load.image('s', GameApp.assetPaths.s);
-    this.game.load.image('t', GameApp.assetPaths.t);
-    this.game.load.image('u', GameApp.assetPaths.u);
-    this.game.load.image('v', GameApp.assetPaths.v);
-    this.game.load.image('w', GameApp.assetPaths.w);
-    this.game.load.image('x', GameApp.assetPaths.x);
-    this.game.load.image('y', GameApp.assetPaths.y);
-    this.game.load.image('z', GameApp.assetPaths.z);
+    try {
+      GameApp.enableLoadingModal();
 
-    this.game.load.image('close', GameApp.assetPaths.close);
-    this.game.load.image('badge', GameApp.assetPaths.badge);
+      // Images - using asset paths from asset-paths.js
+      console.log('Loading letter images');
 
-    // Video
-    this.game.load.video('intro', GameApp.assetPaths.intro);
-
-    // Audio
-    this.game.customSoundManager = new SoundManager()
-    // Use assetPaths for loading sounds
-    this.game.customSoundManager.createSound('period', GameApp.assetPaths.periodSound);
-    this.game.customSoundManager.createSound('dash', GameApp.assetPaths.dashSound);
-    this.game.customSoundManager.createSound('dot', GameApp.assetPaths.dotSound);
-
-    // Add correct and wrong sounds early to ensure they're loaded
-    this.game.customSoundManager.createSound('correct', GameApp.assetPaths.correctSound);
-    this.game.customSoundManager.createSound('wrong', GameApp.assetPaths.wrongSound);
-
-    // Add debug logging
-    console.log('Sound manager initialized with basic sounds')
-
-
-    // letters + soundalike list
-    // First load the nohint image with a special key - MUST be loaded first
-    this.game.load.image('nohint', GameApp.assetPaths.nohint);
-
-    // Make sure the nohint image is loaded before proceeding
-    this.game.load.onFileComplete.add((progress, cacheKey) => {
-      if (cacheKey === 'nohint') {
-        console.log('nohint image loaded successfully');
+      // Check if assetPaths is available
+      if (!GameApp.assetPaths) {
+        console.error('Asset paths not available');
+        return;
       }
-    });
 
-    // Then load the actual letter images from assets/images/final
-    for (let letter of GameApp.course.letters) {
-      // Use the letter-specific images from assetPaths instead of nohint
-      console.log(`Loading image for letter: ${letter} from path: ${GameApp.assetPaths[letter]}`);
-      this.game.load.image(letter, GameApp.assetPaths[letter]);
+      // Load letter images
+      const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 
-      // Load the sounds for each letter
-      const letterSoundPathKey = 'letter_' + letter + '_sound';
-      const soundalikeMwPathKey = 'soundalike_mw_' + letter + '_sound';
+      for (const letter of letters) {
+        if (GameApp.assetPaths[letter]) {
+          this.game.load.image(letter, GameApp.assetPaths[letter]);
+        } else {
+          console.warn(`Asset path for letter ${letter} not found`);
+        }
+      }
 
-      if (GameApp.assetPaths[letterSoundPathKey]) {
-        this.game.customSoundManager.createSound('letter-' + letter, GameApp.assetPaths[letterSoundPathKey]);
+      // Load UI images
+      console.log('Loading UI images');
+      if (GameApp.assetPaths.close) {
+        this.game.load.image('close', GameApp.assetPaths.close);
+      }
+      if (GameApp.assetPaths.badge) {
+        this.game.load.image('badge', GameApp.assetPaths.badge);
+      }
+
+      // Video
+      console.log('Loading intro video');
+      if (GameApp.assetPaths.intro) {
+        this.game.load.video('intro', GameApp.assetPaths.intro);
       } else {
-        console.warn(`Asset path for letter sound ${letterSoundPathKey} not found.`);
+        console.warn('Intro video asset path not found');
       }
 
-      if (GameApp.assetPaths[soundalikeMwPathKey]) {
-        this.game.customSoundManager.createSound('soundalike-letter-' + letter, GameApp.assetPaths[soundalikeMwPathKey]);
-      } else {
-        console.warn(`Asset path for soundalike_mw ${soundalikeMwPathKey} not found.`);
+      // Audio
+      console.log('Initializing sound manager');
+      try {
+        this.game.customSoundManager = new SoundManager();
+
+        // Use assetPaths for loading sounds
+        const sounds = {
+          'period': GameApp.assetPaths.periodSound,
+          'dash': GameApp.assetPaths.dashSound,
+          'dot': GameApp.assetPaths.dotSound,
+          'correct': GameApp.assetPaths.correctSound,
+          'wrong': GameApp.assetPaths.wrongSound
+        };
+
+        for (const [name, path] of Object.entries(sounds)) {
+          if (path) {
+            this.game.customSoundManager.createSound(name, path);
+          } else {
+            console.warn(`Sound asset path for ${name} not found`);
+          }
+        }
+
+        console.log('Sound manager initialized with basic sounds');
+      } catch (error) {
+        console.error('Error initializing sound manager:', error);
       }
+
+
+      // letters + soundalike list
+      // First load the nohint image with a special key - MUST be loaded first
+      console.log('Loading nohint image');
+      if (GameApp.assetPaths.nohint) {
+        this.game.load.image('nohint', GameApp.assetPaths.nohint);
+      } else {
+        console.warn('Nohint image asset path not found');
+      }
+
+      // Make sure the nohint image is loaded before proceeding
+      this.game.load.onFileComplete.add((progress, cacheKey) => {
+        if (cacheKey === 'nohint') {
+          console.log('nohint image loaded successfully');
+        }
+      });
+
+      // Then load the letter sounds
+      console.log('Loading letter sounds');
+      try {
+        // Check if course and letters are available
+        if (GameApp.course && GameApp.course.letters) {
+          for (let letter of GameApp.course.letters) {
+            // Load the sounds for each letter
+            const letterSoundPathKey = 'letter_' + letter + '_sound';
+            const soundalikeMwPathKey = 'soundalike_mw_' + letter + '_sound';
+
+            if (GameApp.assetPaths[letterSoundPathKey]) {
+              this.game.customSoundManager.createSound('letter-' + letter, GameApp.assetPaths[letterSoundPathKey]);
+            } else {
+              console.warn(`Asset path for letter sound ${letterSoundPathKey} not found.`);
+            }
+
+            if (GameApp.assetPaths[soundalikeMwPathKey]) {
+              this.game.customSoundManager.createSound('soundalike-letter-' + letter, GameApp.assetPaths[soundalikeMwPathKey]);
+            } else {
+              console.warn(`Asset path for soundalike_mw ${soundalikeMwPathKey} not found.`);
+            }
+          }
+        } else {
+          console.warn('Course or letters not available for loading letter sounds');
+        }
+      } catch (error) {
+        console.error('Error loading letter sounds:', error);
+      }
+
+      // Make sure the images are properly loaded before starting the game
+      this.game.load.onLoadComplete.add(() => {
+        console.log("All assets loaded successfully");
+      });
+
+      console.log('All sound files loaded');
+    } catch (error) {
+      console.error('Error in preload method:', error);
     }
-
-    // Make sure the images are properly loaded before starting the game
-    this.game.load.onLoadComplete.add(() => {
-      console.log("All assets loaded successfully");
-    });
-
-    console.log('All sound files loaded');
   }
 
   // Show about modal
   showModal() {
-    if (this.modalShow) {
-      window.location.hash = '#about';
-      document.getElementById('button').innerHTML = `<img src="${this.assetPaths.close}">`;
-      document.getElementById('overlay').classList.add('open');
-    } else {
-      window.location.hash = '';
-      document.getElementById('button').innerHTML = '?';
-      document.getElementById('overlay').classList.remove('open');
+    console.log('Show modal called, modalShow:', this.modalShow);
+
+    try {
+      if (this.modalShow) {
+        window.location.hash = '#about';
+
+        const button = document.getElementById('button');
+        if (button) {
+          button.innerHTML = `<img src="${this.assetPaths.close}">`;
+        } else {
+          console.error('Button element not found');
+        }
+
+        const overlay = document.getElementById('overlay');
+        if (overlay) {
+          overlay.classList.add('open');
+        } else {
+          console.error('Overlay element not found');
+        }
+      } else {
+        window.location.hash = '';
+
+        const button = document.getElementById('button');
+        if (button) {
+          button.innerHTML = '?';
+        } else {
+          console.error('Button element not found');
+        }
+
+        const overlay = document.getElementById('overlay');
+        if (overlay) {
+          overlay.classList.remove('open');
+        } else {
+          console.error('Overlay element not found');
+        }
+      }
+    } catch (error) {
+      console.error('Error in showModal method:', error);
     }
   }
 
   // show loading modal
   enableLoadingModal(show = true) {
-    const modalId = 'loading-overlay'
-    if (show) {
-      document.getElementById(modalId).classList.add('open')
-    } else {
-      document.getElementById(modalId).classList.remove('open')
+    console.log('Enable loading modal called, show:', show);
+
+    try {
+      const modalId = 'loading-overlay';
+      const modal = document.getElementById(modalId);
+
+      if (modal) {
+        if (show) {
+          modal.classList.add('open');
+        } else {
+          modal.classList.remove('open');
+        }
+      } else {
+        console.error('Loading modal element not found');
+      }
+    } catch (error) {
+      console.error('Error in enableLoadingModal method:', error);
     }
   }
 }

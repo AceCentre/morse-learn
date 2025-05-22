@@ -37,7 +37,10 @@ const titleOffset = 60
 const startButtonOffset = 190
 const startButtonSize = 37
 
-const letterSize = Math.min( window.innerWidth / 18, 42) ;
+// Adjust letter size based on screen width
+const letterSize = Math.min(window.innerWidth / 20, 38);
+// Smaller font on very small screens
+const smallScreenLetterSize = window.innerWidth < 375 ? Math.min(window.innerWidth / 24, 30) : letterSize;
 
 const wordBrickSize = breakPointerSwitcher({ above: 200, below: 100 });
 const wordLetterSize = breakPointerSwitcher({ above: 150, below: 50 });
@@ -67,8 +70,9 @@ const config = {
     font: 'Poppins, Helvetica, Arial, sans-serif',
   },
   header: {
-    letterSize,
+    letterSize: window.innerWidth < 375 ? smallScreenLetterSize : letterSize,
     topPosition: 30,
+    letterSpacing: window.innerWidth < 375 ? 2 : 5,
   },
   title: {
     mainFontSize,

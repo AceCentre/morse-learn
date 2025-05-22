@@ -23,6 +23,8 @@ function delay(ms) {
 
 class GameSpace {
   constructor(game) {
+    console.log('Game space constructor called');
+
     this.parent = null;
     this.currentLettersInPlay = [];
     /** @type {Array<Word>} */
@@ -33,8 +35,23 @@ class GameSpace {
     this.inputReady = true;
     this.game = game;
     this.gameSpaceGroup = this.game.add.group();
-    this.allBgColors = [0xef4136, 0xf7941e, 0x662d91, 0x00a651];
-    this.allBgColorsString = ["#ef4136", "#f7941e", "#662d91", "#00a651"];
+
+    // Set up background colors for word blocks with brighter, more visible colors
+    this.allBgColors = [
+      0xF05A5A, // Red
+      0x5A9BF0, // Blue
+      0x5AF0B2, // Green
+      0xF0D15A, // Yellow
+      0xC55AF0  // Purple
+    ];
+
+    this.allBgColorsString = [
+      '#F05A5A', // Red
+      '#5A9BF0', // Blue
+      '#5AF0B2', // Green
+      '#F0D15A', // Yellow
+      '#C55AF0'  // Purple
+    ];
   }
 
   // Update the word backgrounds to mute non-current words
@@ -57,137 +74,338 @@ class GameSpace {
   }
 
   findAWord() {
-    const shuffled = _.shuffle(this.parent.course.words);
-    const newestLetter = this.currentLettersInPlay[
-      this.currentLettersInPlay.length - 1
-    ];
-    let myWord;
+    console.log('Finding a word');
 
-    // Check if letters in play has some added already
-    if (this.currentLettersInPlay.length < 3) {
-      this.currentLettersInPlay = this.parent.course.lettersToLearn.slice(0, 3);
-    }
+    try {
+      // Default words to use if course words aren't available
+      const defaultWords = [
+        'cat', 'dog', 'hat', 'bat', 'rat', 'sat', 'mat', 'fat',
+        'run', 'sun', 'fun', 'bun', 'gun', 'pun',
+        'red', 'bed', 'fed', 'led', 'wed', 'ted',
+        'big', 'dig', 'fig', 'pig', 'wig', 'zig',
+        'box', 'fox', 'lox', 'sox', 'tox', 'vox'
+      ];
 
-    for (let s = 0; s < shuffled.length; s++) {
-      let onlyTheseLetters = true;
+      // Use course words if available, otherwise use default words
+      const words = (this.parent && this.parent.course && this.parent.course.words)
+        ? this.parent.course.words
+        : defaultWords;
 
-      // Exclude all letters that arent in the current pool
-      for (let l = 0; l < shuffled[s].length; l++) {
-        if (_.indexOf(this.currentLettersInPlay, shuffled[s][l]) === -1) {
-          onlyTheseLetters = false;
+      const shuffled = _.shuffle(words);
+
+      // Get the newest letter in play
+      const newestLetter = this.currentLettersInPlay.length > 0
+        ? this.currentLettersInPlay[this.currentLettersInPlay.length - 1]
+        : 'a';
+
+      let myWord;
+
+      // Check if letters in play has some added already
+      if (this.currentLettersInPlay.length < 3) {
+        // Use course letters if available, otherwise use default letters
+        if (this.parent && this.parent.course && this.parent.course.lettersToLearn) {
+          this.currentLettersInPlay = this.parent.course.lettersToLearn.slice(0, 3);
+        } else {
+          this.currentLettersInPlay = ['a', 'b', 'c'];
         }
       }
 
-      if (onlyTheseLetters) {
-        // Check to see if newest letter hasn't been learned, then only use
-        if (this.letterScoreDict[newestLetter] < config.app.LEARNED_THRESHOLD) {
-          if (_.indexOf(shuffled[s], newestLetter) > -1) {
+      for (let s = 0; s < shuffled.length; s++) {
+        let onlyTheseLetters = true;
+
+        // Exclude all letters that aren't in the current pool
+        for (let l = 0; l < shuffled[s].length; l++) {
+          if (_.indexOf(this.currentLettersInPlay, shuffled[s][l]) === -1) {
+            onlyTheseLetters = false;
+          }
+        }
+
+        if (onlyTheseLetters) {
+          // Check to see if newest letter hasn't been learned, then only use
+          if (this.letterScoreDict && this.letterScoreDict[newestLetter] &&
+              this.letterScoreDict[newestLetter] < config.app.LEARNED_THRESHOLD) {
+            if (_.indexOf(shuffled[s], newestLetter) > -1) {
+              myWord = shuffled[s];
+              break;
+            }
+          } else {
             myWord = shuffled[s];
             break;
           }
-        } else {
-          myWord = shuffled[s];
-          break;
         }
       }
-    }
 
-    return myWord;
+      // If no word was found, use a default word
+      if (!myWord) {
+        console.warn('No suitable word found, using default word');
+        myWord = 'cat';
+      }
+
+      console.log('Found word:', myWord);
+      return myWord;
+    } catch (error) {
+      console.error('Error finding a word:', error);
+      return 'cat'; // Default fallback word
+    }
   }
 
   create() {
-    this.letterScoreDict = this.parent.letterScoreDict;
-    this.newLetterArray = this.parent.course.lettersToLearn.slice(0);
-    this.newLetterArray.sort();
-    this.loadLetters();
+    console.log('Game space create method called');
 
-    // Check for saved one-switch mode preference
-    const oneSwitchMode = typeof Storage !== "undefined" ?
-      localStorage.getItem("one_switch_mode") === "true" : false;
+    try {
+      // Initialize default values
+      this.gameSpaceGroup = this.game.add.group();
+      this.currentWords = [];
+      this.currentLettersInPlay = [];
 
-    this.morseBoard = new MorseBoard({
-      debounce: 2e3,
-      dashSoundPath: window.GameApp.assetPaths.dashSound,
-      dotSoundPath: window.GameApp.assetPaths.dotSound,
-      notificationStyle: "output",
-      game: this.game,
-      onCommit: (e) =>  {
-        this.checkMatch(e.letter ? e.letter : "");
-      },
-      // Initialize one-switch mode from saved preference
-      oneSwitchMode: oneSwitchMode,
-      oneSwitchKeyMap: [88], // X key
-      oneSwitchTimeout: 500, // ms
-    });
+      // Set up background colors for word blocks
+      this.allBgColors = [
+        0xF05A5A, // Red
+        0x5A9BF0, // Blue
+        0x5AF0B2, // Green
+        0xF0D15A, // Yellow
+        0xC55AF0  // Purple
+      ];
 
+      this.allBgColorsString = [
+        '#F05A5A', // Red
+        '#5A9BF0', // Blue
+        '#5AF0B2', // Green
+        '#F0D15A', // Yellow
+        '#C55AF0'  // Purple
+      ];
+
+      if (!this.parent) {
+        console.error('Game space parent is undefined');
+        return;
+      }
+
+      if (!this.parent.letterScoreDict) {
+        console.error('Letter score dictionary is undefined');
+        this.letterScoreDict = {};
+      } else {
+        this.letterScoreDict = this.parent.letterScoreDict;
+      }
+
+      if (!this.parent.course || !this.parent.course.lettersToLearn) {
+        console.error('Course or letters to learn is undefined');
+        this.newLetterArray = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']; // Default fallback
+      } else {
+        this.newLetterArray = this.parent.course.lettersToLearn.slice(0);
+      }
+
+      this.newLetterArray.sort();
+      console.log('Letters to learn:', this.newLetterArray);
+
+      this.loadLetters();
+      console.log('Letters loaded');
+
+      // Check for saved one-switch mode preference
+      const oneSwitchMode = typeof Storage !== "undefined" ?
+        localStorage.getItem("one_switch_mode") === "true" : false;
+      console.log('One-switch mode:', oneSwitchMode);
+
+      // Check if window.GameApp and assetPaths exist
+      if (!window.GameApp || !window.GameApp.assetPaths) {
+        console.error('GameApp or assetPaths is undefined');
+      }
+
+      const dashSoundPath = window.GameApp && window.GameApp.assetPaths ?
+        window.GameApp.assetPaths.dashSound : '../assets/sounds/dash.mp3';
+      const dotSoundPath = window.GameApp && window.GameApp.assetPaths ?
+        window.GameApp.assetPaths.dotSound : '../assets/sounds/dot.mp3';
+
+      this.morseBoard = new MorseBoard({
+        debounce: 2e3,
+        dashSoundPath: dashSoundPath,
+        dotSoundPath: dotSoundPath,
+        notificationStyle: "output",
+        game: this.game,
+        onCommit: (e) =>  {
+          this.checkMatch(e.letter ? e.letter : "");
+        },
+        // Initialize one-switch mode from saved preference
+        oneSwitchMode: oneSwitchMode,
+        oneSwitchKeyMap: [88], // X key
+        oneSwitchTimeout: 500, // ms
+      });
+      console.log('Morse board created');
+    } catch (error) {
+      console.error('Error in game space create method:', error);
+    }
+
+    // Create word objects with a slight delay to ensure everything is initialized
     setTimeout(() => {
-      for (let i = 0; i < config.app.howManyWordsToStart; i++) {
-        this.makeWordObject(i);
-      }
+      try {
+        console.log('Creating initial word objects');
 
-      for (let i = 0; i < this.currentWords.length; i++) {
-        if (i > 0) {
-          const myStartX =
-            this.currentWords[i - 1].myStartX +
-            this.currentWords[i - 1].letterObjects.length *
-              config.app.wordBrickSize +
-            config.app.spaceBetweenWords;
-          this.currentWords[i].setPosition(myStartX);
-        } else {
-          this.createFirstWord();
+        // Get the number of words to start with from config or use default
+        const howManyWordsToStart = config.app.howManyWordsToStart || 3;
+        console.log('Creating', howManyWordsToStart, 'initial words');
+
+        // Create the initial words
+        for (let i = 0; i < howManyWordsToStart; i++) {
+          this.makeWordObject();
         }
+
+        console.log('Initial words created:', this.currentWords.length);
+
+        // Position the words
+        for (let i = 0; i < this.currentWords.length; i++) {
+          if (i > 0) {
+            // Position subsequent words based on the previous word
+            const prevWord = this.currentWords[i - 1];
+            if (prevWord && prevWord.letterObjects && prevWord.letterObjects.length > 0) {
+              const myStartX =
+                prevWord.myStartX +
+                prevWord.letterObjects.length * config.app.wordBrickSize +
+                (config.app.spaceBetweenWords || 20);
+              this.currentWords[i].setPosition(myStartX);
+            } else {
+              // Fallback if previous word is not properly initialized
+              const startX = this.game.world.centerX + (i * 100);
+              this.currentWords[i].setPosition(startX);
+            }
+          } else {
+            // Create the first word (centered)
+            this.createFirstWord();
+          }
+        }
+
+        console.log('Words positioned successfully');
+      } catch (error) {
+        console.error('Error creating word objects:', error);
       }
-    }, 0);
+    }, 500); // Increased delay to ensure everything is ready
   }
 
   async createFirstWord() {
-    let word = this.currentWords[0];
-    let letter = word.myLetters[word.currentLetterIndex];
+    console.log('Creating first word');
 
-    // Position the first word in the center of the screen
-    const centerX = this.game.world.centerX;
-    word.setPosition(centerX);
+    try {
+      // Make sure we have at least one word
+      if (this.currentWords.length === 0) {
+        console.warn('No words available, creating a new word');
+        this.makeWordObject();
+      }
 
-    // Update word backgrounds to highlight the current word
-    this.updateWordBackgrounds();
+      let word = this.currentWords[0];
+      if (!word) {
+        console.error('Failed to create first word');
+        return;
+      }
 
-    // Animate stuff immediately when first starting
-    this.game.add
-      .tween(word.pills[0].scale)
-      .to(
-        { x: 1, y: 1 },
-        250,
-        Phaser.Easing.Exponential.Out,
-        true,
-        config.animations.SLIDE_START_DELAY
-      );
-    word.pushUp(0);
-    word.letterObjects[0].addColor("#F1E4D4", 0);
-    word.letterObjects[0].alpha = 1;
+      let letter = word.myLetters[word.currentLetterIndex];
+      console.log('First word:', word.myLetters.join(''), 'First letter:', letter);
 
-    // await delay(config.animations.SLIDE_END_DELAY + 800);
-    word.setStyle(0);
-    await this.playLetter(letter);
-    if (this.letterScoreDict[letter] < config.app.LEARNED_THRESHOLD) {
-      await word.showHint();
-      await this.playHints(word.getCurrentLetter());
+      // Position the first word in the center of the screen
+      const centerX = this.game.world.centerX;
+      word.setPosition(centerX);
+      console.log('Word positioned at center:', centerX);
+
+      // Update word backgrounds to highlight the current word
+      this.updateWordBackgrounds();
+
+      // Animate stuff immediately when first starting
+      try {
+        this.game.add
+          .tween(word.pills[0].scale)
+          .to(
+            { x: 1, y: 1 },
+            250,
+            Phaser.Easing.Exponential.Out,
+            true,
+            config.animations.SLIDE_START_DELAY
+          );
+        word.pushUp(0);
+
+        if (word.letterObjects && word.letterObjects[0]) {
+          word.letterObjects[0].addColor("#F1E4D4", 0);
+          word.letterObjects[0].alpha = 1;
+        }
+
+        // Set the style for the current letter
+        word.setStyle(0);
+
+        // Play the letter sound
+        await this.playLetter(letter);
+
+        // Show hint if needed
+        if (this.letterScoreDict && this.letterScoreDict[letter] < config.app.LEARNED_THRESHOLD) {
+          await word.showHint();
+          await this.playHints(word.getCurrentLetter());
+        }
+      } catch (error) {
+        console.error('Error animating first word:', error);
+      }
+
+      // Enable input
+      this.inputReady = true;
+      console.log('First word created successfully');
+    } catch (error) {
+      console.error('Error creating first word:', error);
+      this.inputReady = true; // Make sure input is enabled even if there's an error
     }
-    this.inputReady = true;
   }
 
   // Set current pool to saved learned letters
   // Update progress lights
   loadLetters() {
-    // Grab saved letters from previous states
-    Object.keys(this.letterScoreDict).forEach((key) => {
-      if (this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD) {
-        this.currentLettersInPlay.push(key);
-      }
-    });
+    console.log('Loading letters');
 
-    setTimeout(() => {
-      this.parent.header.updateProgressLights(this.letterScoreDict);
-    }, 0);
+    try {
+      // Initialize letterScoreDict if it doesn't exist
+      if (!this.letterScoreDict) {
+        console.warn('Letter score dictionary not initialized, creating empty dictionary');
+        this.letterScoreDict = {};
+      }
+
+      // Grab saved letters from previous states
+      Object.keys(this.letterScoreDict).forEach((key) => {
+        if (this.letterScoreDict[key] >= config.app.LEARNED_THRESHOLD) {
+          this.currentLettersInPlay.push(key);
+        }
+      });
+
+      console.log('Current letters in play:', this.currentLettersInPlay);
+
+      // Make sure we have at least the first 3 letters in play
+      if (this.currentLettersInPlay.length < 3) {
+        // Use the first 3 letters from the course if available
+        if (this.parent && this.parent.course && this.parent.course.lettersToLearn) {
+          const firstThreeLetters = this.parent.course.lettersToLearn.slice(0, 3);
+
+          // Add any missing letters
+          firstThreeLetters.forEach(letter => {
+            if (!this.currentLettersInPlay.includes(letter)) {
+              this.currentLettersInPlay.push(letter);
+            }
+          });
+        } else {
+          // Use default letters if course is not available
+          const defaultLetters = ['a', 'b', 'c'];
+          defaultLetters.forEach(letter => {
+            if (!this.currentLettersInPlay.includes(letter)) {
+              this.currentLettersInPlay.push(letter);
+            }
+          });
+        }
+
+        console.log('Updated letters in play:', this.currentLettersInPlay);
+      }
+
+      // Update progress lights in the header
+      setTimeout(() => {
+        if (this.parent && this.parent.header) {
+          this.parent.header.updateProgressLights(this.letterScoreDict);
+          console.log('Progress lights updated');
+        } else {
+          console.warn('Header not available, could not update progress lights');
+        }
+      }, 0);
+    } catch (error) {
+      console.error('Error loading letters:', error);
+    }
   }
 
   checkAddLetters() {
@@ -239,23 +457,39 @@ class GameSpace {
   }
 
   makeWordObject() {
-    let myWord = this.findAWord();
-    let length = myWord.length;
-    let word = new Word(this.game);
-    word.myLength = length;
-    word.myColor = this.allBgColors[
-      this.currentWords.length % this.allBgColors.length
-    ];
-    word.myColorString = this.allBgColorsString[
-      this.currentWords.length % this.allBgColorsString.length
-    ];
-    word.row = 0;
-    word.parent = this;
-    word.gameParent = this.parent;
-    word.create(true, myWord);
+    console.log('Making word object');
 
-    this.checkAddLetters();
-    this.currentWords.push(word);
+    try {
+      let myWord = this.findAWord();
+      let length = myWord.length;
+
+      // Create a new word object
+      let word = new Word(this.game);
+      word.myLength = length;
+
+      // Assign a color from our color arrays
+      const colorIndex = this.currentWords.length % this.allBgColors.length;
+      word.myColor = this.allBgColors[colorIndex];
+      word.myColorString = this.allBgColorsString[colorIndex];
+
+      // Set other properties
+      word.row = 0;
+      word.parent = this;
+      word.gameParent = this.parent;
+
+      // Create the word
+      word.create(true, myWord);
+      console.log('Word created:', myWord);
+
+      // Check if we need to add more letters
+      this.checkAddLetters();
+
+      // Add the word to our list of current words
+      this.currentWords.push(word);
+      console.log('Current words count:', this.currentWords.length);
+    } catch (error) {
+      console.error('Error making word object:', error);
+    }
   }
 
   addAWord() {

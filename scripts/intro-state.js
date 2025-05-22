@@ -120,7 +120,18 @@ class IntroState {
 
   start() {
     this.hasStarted = true;
+
+    // Store that we've seen the intro
+    localStorage.setItem('intro', 'true');
+
+    console.log('Starting game state from intro...');
+
+    // Start the game state
     this.game.state.start('game', true, false, this.letterScoreDict);
+
+    // The morse board will be shown by the game state if needed
+    // We don't need to handle it here
+
     document.removeEventListener('textInput', () => {
       this.start();
     });
