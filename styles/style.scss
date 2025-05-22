@@ -259,9 +259,9 @@ canvas {
   padding: 30px 50px;
   position: fixed;
   text-align: center;
-  right: 0;
   text-decoration: none;
   top: 0;
+  right: 0;
   z-index: 2;
 
   &:focus {
@@ -287,6 +287,38 @@ canvas {
     height: 75px;
     width: 75px;
     z-index: -1;
+  }
+}
+
+#settings-button {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba($black, 0.4);
+  color: #f1e4d4;
+  cursor: pointer;
+  display: none;
+  z-index: 2;
+
+  /* Simple centering technique */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Remove any default styling */
+  text-decoration: none;
+  padding: 0;
+  margin: 0;
+
+  i {
+    font-size: 20px; /* Control icon size directly */
+  }
+
+  &:focus {
+    outline: none;
   }
 }
 
@@ -379,13 +411,9 @@ canvas {
   }
 }
 
+/* This class is no longer needed since we removed the old settings panel */
 .gamemode {
-  padding-top: 48px;
-
-  p,
-  h2, span {
-    display: none;
-  }
+  display: none;
 }
 
 .about-button {
@@ -441,6 +469,7 @@ canvas {
   width: 80%;
   margin: 0 auto;
   overflow: auto;
+  position: relative;
 
   box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.5);
 
@@ -485,6 +514,7 @@ canvas {
     font-size: 24px;
     font-weight: bold;
     text-align: center;
+    margin-bottom: 24px;
   }
 
   p {
@@ -497,6 +527,120 @@ canvas {
   p.strong {
     margin: 32px 0;
     font-weight: bold;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #666;
+
+    &:hover {
+      color: #000;
+    }
+  }
+}
+
+// Settings modal specific styles
+.settings-modal {
+  max-width: 500px;
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    @media (min-width: 500px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .setting-label {
+    display: flex;
+    align-items: center;
+
+    i {
+      margin-right: 12px;
+      width: 20px;
+      text-align: center;
+      color: #666;
+    }
+
+    span {
+      font-size: 16px;
+    }
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &.active {
+      background-color: #00a651;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+
+      .active & {
+        transform: translateX(26px);
+      }
+    }
+  }
+
+  .settings-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    @media (min-width: 500px) {
+      flex-direction: row;
+      justify-content: center;
+    }
+
+    .settings-button {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #e0e0e0;
+      }
+
+      i {
+        margin-right: 8px;
+      }
+    }
   }
 }
 

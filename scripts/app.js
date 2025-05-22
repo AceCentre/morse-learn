@@ -182,8 +182,9 @@ class App {
     this.game.stage.smoothed = config.app.smoothed;
     GameApp.determineScale();
 
-    // Show about button
+    // Show about and settings buttons
     document.getElementById('button').style.display = 'block';
+    document.getElementById('settings-button').style.display = 'block';
 
     this.game.state.add('title', new TitleState(this.game, GameApp.course));
     this.game.state.add('intro', new IntroState(this.game));
