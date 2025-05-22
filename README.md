@@ -25,7 +25,11 @@ The application includes an API service for collecting analytics data. The API s
 
 ### Setup and Deployment
 
-See the [API Service README](api-service/README.md) for setup and deployment instructions.
+For detailed deployment instructions, see:
+- [API Service README](api-service/README.md) - For API service specific setup
+- [DEPLOYMENT.md](DEPLOYMENT.md) - For unified deployment of both the static site and API service
+
+The application can be deployed as a single app on DigitalOcean App Platform, with both the static site and API service components working together.
 
 
 ## Contributors

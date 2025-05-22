@@ -11,10 +11,35 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
+
+// Configure CORS to work with both development and production environments
+const corsOptions = {
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    // Check if the origin is allowed
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:1234', // Parcel dev server
+      'http://127.0.0.1:1234'  // Parcel dev server alternative
+    ];
+
+    // If deployed on the same domain, the origin will be the app URL
+    if (process.env.APP_URL) {
+      allowedOrigins.push(process.env.APP_URL);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Create MySQL connection pool
 const pool = mysql.createPool({
