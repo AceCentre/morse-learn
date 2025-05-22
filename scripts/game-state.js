@@ -29,23 +29,65 @@ class GameState {
   }
 
   init(params) {
-    this.letterScoreDict = params;
+    console.log('Game state init method called with params:', params);
+    this.letterScoreDict = params || {};
+
+    // Initialize course if not already initialized
+    if (!this.game.course) {
+      console.log('Initializing course in game state');
+      this.game.course = {
+        lettersToLearn: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+      };
+    }
+
+    // Make sure the course is accessible to this state
+    this.course = this.game.course;
+    console.log('Course initialized:', this.course);
   }
 
   create() {
-    this.gameSpace = new GameSpace(this.game);
-    this.gameSpace.parent = this;
-    this.gameSpace.create();
+    console.log('Game state create method called');
 
-    // Keep gamespace under header space
-    this.game.world.sendToBack(this.gameSpace.gameSpaceGroup);
+    try {
+      // Create game space
+      this.gameSpace = new GameSpace(this.game);
+      this.gameSpace.parent = this;
+      this.gameSpace.create();
+      console.log('Game space created successfully');
 
-    this.header = new HeaderSpace(this.game);
-    this.header.parent = this;
-    this.header.create();
+      // Keep gamespace under header space
+      this.game.world.sendToBack(this.gameSpace.gameSpaceGroup);
 
-    // Keep header space on top
-    this.game.world.bringToTop(this.header.headerGroup);
+      // Create header space
+      this.header = new HeaderSpace(this.game);
+      this.header.parent = this;
+      this.header.create();
+      console.log('Header space created successfully');
+
+      // Keep header space on top
+      this.game.world.bringToTop(this.header.headerGroup);
+
+      // Make sure the morse board is visible when the game state is created
+      // Check if it should be hidden based on user preference
+      const morseBoardHidden = localStorage.getItem('morseboard_hidden') === 'true';
+      console.log('Morse board hidden preference:', morseBoardHidden);
+
+      // Show morse board with a slight delay to ensure game state is fully initialized
+      setTimeout(() => {
+        if (!morseBoardHidden) {
+          const morseBoard = document.getElementById('morseboard');
+          if (morseBoard) {
+            morseBoard.style.display = 'flex';
+            morseBoard.classList.remove('hidden');
+            console.log('Showing morse board in game state');
+          } else {
+            console.error('Morse board element not found');
+          }
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Error in game state create method:', error);
+    }
   }
 
   // Save progress to localStorage

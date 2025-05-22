@@ -53,7 +53,10 @@ class HeaderSpace {
         }
 
         setTimeout(() => {
-          this.lettersProgress.filter(letter => letter.text.toLowerCase() === key)[0].alpha = currentAlpha;
+          const matchingLetters = this.lettersProgress.filter(letter => letter.text && letter.text.toLowerCase() === key);
+          if (matchingLetters && matchingLetters.length > 0 && matchingLetters[0]) {
+            matchingLetters[0].alpha = currentAlpha;
+          }
         }, 500);
       }
     });
@@ -69,67 +72,100 @@ class HeaderSpace {
   }
 
   createLetters() {
-    const spacing = this.parent.course.headerSpacing;
-    const lettersToLearn = this.parent.course.lettersToLearn.slice(0);
-    lettersToLearn.sort();
+    console.log('Header space createLetters method called');
 
-    for (let i = 0; i < lettersToLearn.length; i++) {
-      const letter = this.game.add.text(i * (config.header.letterSize + spacing), 0, lettersToLearn[i].toUpperCase(), {
-        align: 'center',
-        boundsAlignH: 'center',
-        boundsAlignV: 'middle'
-      });
-      letter.setTextBounds(0, 0, config.header.letterSize - 10, config.header.letterSize - 10);
-      letter.font = config.typography.font;
-      letter.fontWeight = 700;
-      letter.fontSize = config.header.letterSize;
-      letter.addColor('#fff', 0);
-      letter.alpha = 0.2;
+    try {
+      // Use default alphabet if course is not properly initialized
+      let lettersToLearn = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+      let spacing = 5;
 
-      let circle = this.game.add.graphics(0, 0);
-      circle.lineStyle(2, 0xffffff, 1);
-      circle.drawCircle(0, 0, 50);
-      circle.position.x = i * (config.header.letterSize - 10);
-      circle.scale.x = 0;
-      circle.scale.y = 0;
+      // Try to get letters from course if available
+      if (this.parent && this.parent.course) {
+        if (this.parent.course.headerSpacing) {
+          spacing = this.parent.course.headerSpacing;
+        }
 
-      // Position individual letters
-      if (i >= 13 && i < 22) {
-        letter.position.x += 7;
-        circle.position.x += 7;
+        if (this.parent.course.lettersToLearn && this.parent.course.lettersToLearn.length > 0) {
+          lettersToLearn = this.parent.course.lettersToLearn.slice(0);
+        }
+      } else {
+        console.warn('Using default alphabet for header space');
       }
 
-      if (i === 22) {
-        letter.position.x += 15;
-        circle.position.x += 15;
-      } else if (i >= 23) {
-        letter.position.x += 20;
-        circle.position.x += 20;
+      lettersToLearn.sort();
+      console.log('Letters to learn in header space:', lettersToLearn);
+
+      for (let i = 0; i < lettersToLearn.length; i++) {
+        const letter = this.game.add.text(i * (config.header.letterSize + spacing), 0, lettersToLearn[i].toUpperCase(), {
+          align: 'center',
+          boundsAlignH: 'center',
+          boundsAlignV: 'middle'
+        });
+        // Set text bounds with proper spacing
+        const letterSpacing = config.header.letterSpacing || 5;
+        letter.setTextBounds(0, 0, config.header.letterSize - letterSpacing, config.header.letterSize - letterSpacing);
+        letter.font = config.typography.font;
+        letter.fontWeight = 700;
+        letter.fontSize = config.header.letterSize;
+        letter.addColor('#fff', 0);
+        letter.alpha = 0.2;
+
+        let circle = this.game.add.graphics(0, 0);
+        circle.lineStyle(2, 0xffffff, 1);
+        circle.drawCircle(0, 0, 50);
+
+        // Apply consistent spacing between letters
+        circle.position.x = i * (config.header.letterSize - letterSpacing);
+        circle.scale.x = 0;
+        circle.scale.y = 0;
+
+        // Adjust spacing for mobile screens
+        const isMobile = window.innerWidth < 480;
+        const baseSpacing = isMobile ? 3 : 7;
+
+        // Position individual letters with more consistent spacing
+        if (i >= 13 && i < 22) {
+          letter.position.x += baseSpacing;
+          circle.position.x += baseSpacing;
+        }
+
+        if (i === 22) {
+          letter.position.x += baseSpacing * 2;
+          circle.position.x += baseSpacing * 2;
+        } else if (i >= 23) {
+          letter.position.x += baseSpacing * 3;
+          circle.position.x += baseSpacing * 3;
+        }
+
+        this.headerGroup.add(letter);
+        this.circlesGroup.add(circle);
+        this.headerGroup.position.x = this.game.world.centerX - (this.headerGroup.width / 2);
+        this.circlesGroup.position.x = this.game.world.centerX - (this.circlesGroup.width / 2);
+        this.lettersProgress.push(letter);
+        this.letterCircles.push(circle);
       }
 
-      this.headerGroup.add(letter);
-      this.circlesGroup.add(circle);
-      this.headerGroup.position.x = this.game.world.centerX - (this.headerGroup.width / 2);
-      this.circlesGroup.position.x = this.game.world.centerX - (this.circlesGroup.width / 2);
-      this.lettersProgress.push(letter);
-      this.letterCircles.push(circle);
+      // Cta Button that links externally
+      try {
+        let ctaButton = this.game.add.button(this.game.world.centerX, 20, '', () => {
+          this.clearProgress();
+        });
+        ctaButton.anchor.set(0.5, 0);
+        ctaButton.width = this.headerGroup.width;
+        ctaButton.height = this.headerGroup.height;
+        ctaButton.alpha = 0;
+
+        // Move button above all things
+        this.buttonGroup = this.game.add.group();
+        this.buttonGroup.add(ctaButton);
+        this.game.world.bringToTop(this.buttonGroup);
+        this.game.add.tween(this.headerGroup).to({ y: config.header.topPosition }, 800, Phaser.Easing.Exponential.Out, true, 400);
+      } catch (error) {
+        console.error('Error creating CTA button:', error);
+      }
+    } catch (error) {
+      console.error('Error in createLetters method:', error);
     }
-
-
-    // Cta Button that links externally
-    let ctaButton = this.game.add.button(this.game.world.centerX, 20, '', () => {
-      this.clearProgress();
-    });
-    ctaButton.anchor.set(0.5, 0);
-    ctaButton.width = this.headerGroup.width;
-    ctaButton.height = this.headerGroup.height;
-    ctaButton.alpha = 0;
-
-    // Move button above all things
-    this.buttonGroup = this.game.add.group();
-    this.buttonGroup.add(ctaButton);
-    this.game.world.bringToTop(this.buttonGroup);
-    this.game.add.tween(this.headerGroup).to({ y: config.header.topPosition }, 800, Phaser.Easing.Exponential.Out, true, 400);
   }
 
   saveLetters(score) {
@@ -152,7 +188,21 @@ class HeaderSpace {
   }
 
   create() {
-    this.createLetters();
+    console.log('Header space create method called');
+    try {
+      this.createLetters();
+      console.log('Header space letters created successfully');
+
+      // Make sure the header is at the top of the display list
+      this.game.world.bringToTop(this.headerGroup);
+
+      // Initialize with the current progress
+      if (this.parent && this.parent.letterScoreDict) {
+        this.updateProgressLights(this.parent.letterScoreDict);
+      }
+    } catch (error) {
+      console.error('Error in header space create method:', error);
+    }
   }
 
   // Update header position when window is resized

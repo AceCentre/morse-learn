@@ -184,7 +184,7 @@ canvas {
   align-items: stretch;
   background: rgb(230, 231, 232);
   bottom: 0px;
-  display: none;
+  display: none; // Changed back to 'none' - will be shown when game starts
   flex-direction: column;
   height: 20vh;
   min-height: 180px;
@@ -192,6 +192,10 @@ canvas {
   left: 0px;
   position: fixed;
   width: 100%;
+  border-top: 1px solid rgba(0, 0, 0, 0.1); // Add border for better visibility
+  z-index: 10; // Ensure it's above other elements
+  color: #000; // Ensure text is visible in all modes
+  pointer-events: auto; // Ensure it receives events when visible
 
   &.hidden {
     display: none !important;
@@ -202,6 +206,18 @@ canvas {
     height: 25vh;
     min-height: 150px;
     max-height: 180px;
+  }
+
+  // Adjust for small mobile screens
+  @media (max-width: 480px) {
+    min-height: 160px;
+  }
+
+  // Ensure buttons are visible in all modes
+  button {
+    color: #000;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -239,7 +255,7 @@ canvas {
   appearance: none;
   margin: 8px;
   background: rgb(255, 255, 255);
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   box-shadow: rgb(161, 162, 162) 0px 4px 0px, rgb(161, 162, 162) 2px 4px 0px,
     rgb(161, 162, 162) -2px 4px 0px;
@@ -247,6 +263,7 @@ canvas {
   font-size: 32px;
   outline: none;
   width: 42px;
+  color: #000; // Ensure text is always visible
 }
 
 .keybutton.longkey {
@@ -491,7 +508,8 @@ canvas {
   max-width: 600px;
   width: 80%;
   margin: 0 auto;
-  overflow: auto;
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
 
   box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.5);
@@ -572,6 +590,14 @@ canvas {
 // Settings modal specific styles
 .settings-modal {
   max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+
+  @media (max-width: 480px) {
+    padding: 24px 16px;
+    width: 90%;
+  }
 
   .settings-grid {
     display: grid;

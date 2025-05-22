@@ -55,10 +55,21 @@ class MorseBoard {
 
   create() {
     this.background = document.getElementById("morseboard");
-    this.background.style.display = "flex";
+    if (!this.background) {
+      console.error("Morse board element not found");
+      return;
+    }
+
+    // Don't force display:flex here - let the game state handle this
+    // This prevents the morse board from blocking clicks on the title screen
     this.background.style.height = this.config.height;
 
     this.output = document.getElementById("output");
+    if (!this.output) {
+      console.error("Morse board output element not found");
+      return;
+    }
+
     this.output.style.bottom = this.config.height;
     this.output.style.visibility = this.config.output ? "visible" : "hidden";
     this.output.style.pointerEvents = this.config.output ? "auto" : "none";
@@ -66,11 +77,23 @@ class MorseBoard {
     this.output.setAttribute("tabindex", "-1");
 
     this.buttonBox = document.getElementById("button-box");
+    if (!this.buttonBox) {
+      console.error("Morse board button box not found");
+      return;
+    }
 
     this.dotButton = document.getElementById("dot");
+    if (!this.dotButton) {
+      console.error("Morse board dot button not found");
+      return;
+    }
     this.dotButton.setAttribute("tabindex", "0");
 
     this.dashButton = document.getElementById("dash");
+    if (!this.dashButton) {
+      console.error("Morse board dash button not found");
+      return;
+    }
     this.dashButton.setAttribute("tabindex", "0");
 
     // Initialize one-switch mode variables
@@ -245,13 +268,21 @@ class MorseBoard {
   }
 
   onClick(e) {
-    if (this.config.sounds && !this.detectIE()) {
-      this.dotAudio.currentTime = 0;
-      this.dashAudio.currentTime = 0;
-      this.dotAudio.pause();
-      this.dashAudio.pause();
+    if (!e || !e.target) {
+      console.error("Invalid click event or target");
+      return;
     }
-    if (this.config.notificationStyle === "output") {
+
+    if (this.config.sounds && !this.detectIE()) {
+      if (this.dotAudio && this.dashAudio) {
+        this.dotAudio.currentTime = 0;
+        this.dashAudio.currentTime = 0;
+        this.dotAudio.pause();
+        this.dashAudio.pause();
+      }
+    }
+
+    if (this.config.notificationStyle === "output" && this.output) {
       if (this.outputStyleTimeout) {
         this.output.style.color = "#231F20";
         clearTimeout(this.outputStyleTimeout);
@@ -261,26 +292,31 @@ class MorseBoard {
         this.output.value = "";
       }
     }
+
     var button = e.target.id;
-    if (button === "dot") {
+    if (button === "dot" && this.output) {
       this.output.value += ".";
-      if (this.config.sounds && !this.detectIE() && this.game.have_audio) {
+      if (this.config.sounds && !this.detectIE() && this.game && this.game.have_audio && this.dotAudio) {
         this.dotAudio.play();
       }
-    } else if (button === "dash") {
+    } else if (button === "dash" && this.output) {
       this.output.value += "-";
-      if (this.config.sounds && !this.detectIE() && this.game.have_audio) {
+      if (this.config.sounds && !this.detectIE() && this.game && this.game.have_audio && this.dashAudio) {
         this.dashAudio.play();
       }
     }
     if (e && e.target) {
       e.target.style.boxShadow = "0px 2px 0px #A1A2A2";
       e.target.style.background = "#F7F7F7";
+      e.target.style.color = "#000"; // Ensure text is visible in all modes
+      e.target.style.border = "1px solid rgba(0, 0, 0, 0.1)"; // Add border for visibility
     }
     setTimeout(function () {
       if (e && e.target) {
         e.target.style.boxShadow = "0px 4px 0px #A1A2A2";
         e.target.style.background = "#FFFFFF";
+        e.target.style.color = "#000"; // Ensure text is visible in all modes
+        e.target.style.border = "1px solid rgba(0, 0, 0, 0.1)"; // Add border for visibility
       }
     }, 100);
     this.debounce();

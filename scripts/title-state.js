@@ -151,31 +151,56 @@ class TitleState {
     // Setup the settings button and modal
     this.setupSettingsModal(initialAudio, initialSpeechAssistive, initialVisualCues, initialTrackingConsent)
 
-    const startListener = () => doStart();
+    // Create a function to handle starting the game
+    const doStart = () => {
+      if (this.hasStarted) return; // Prevent multiple starts
 
-    function clearEventHandlers() {
-      document.removeEventListener("keydown", startListener);
-      canvas.removeEventListener("click", startListener);
-    }
-    let doStart = () => {
-      clearEventHandlers();
+      // Update game settings
       this.game.have_audio = this.have_audio;
       this.game.have_speech_assistive = this.have_speech_assistive;
       this.game.have_visual_cues = this.have_visual_cues;
+
       console.log('Game starting with settings:', {
         audio: this.game.have_audio,
         speech: this.game.have_speech_assistive,
         visualCues: this.game.have_visual_cues
       });
-      this.start();
-      this.hasStarted = true;
 
-      timePlaytime()
+      // Start the game
+      this.start();
+
+      // Start tracking playtime
+      timePlaytime();
+
+      // Remove event listeners to prevent multiple starts
+      document.removeEventListener("keydown", handleKeyDown);
+      canvas.removeEventListener("click", handleCanvasClick);
+      document.removeEventListener("touchstart", handleTouchStart);
     };
 
-    document.addEventListener("keydown", startListener);
+    // Event handlers for different input methods
+    const handleKeyDown = () => doStart();
+    const handleCanvasClick = (e) => {
+      // Make sure the click is not on the morse board or settings
+      if (e.target.tagName.toLowerCase() === 'canvas') {
+        doStart();
+      }
+    };
+    const handleTouchStart = (e) => {
+      // Only handle touch events on the canvas
+      if (e.target.tagName.toLowerCase() === 'canvas') {
+        doStart();
+      }
+    };
 
-    canvas.addEventListener("click", startListener);
+    // Add event listeners for different input methods
+    document.addEventListener("keydown", handleKeyDown);
+    canvas.addEventListener("click", handleCanvasClick);
+
+    // Add touch event for mobile devices
+    if (config.GLOBALS.isTouch) {
+      document.addEventListener("touchstart", handleTouchStart);
+    }
     let updateAudioToggles = () => {
       audioToggle.classList[this.have_audio ? "remove" : "add"]("disabled");
       speechToggle.classList[
@@ -280,16 +305,30 @@ class TitleState {
       e.preventDefault();
       e.stopPropagation();
 
-      const morseBoard = document.getElementById('morseboard');
-      if (morseBoard) {
-        morseBoard.classList.toggle('hidden');
+      // Get the current preference
+      const isCurrentlyHidden = localStorage.getItem('morseboard_hidden') === 'true';
+      const newState = !isCurrentlyHidden; // Toggle to opposite of current state
 
-        // Store preference in localStorage
-        const isHidden = morseBoard.classList.contains('hidden');
-        localStorage.setItem('morseboard_hidden', isHidden);
+      // Store preference in localStorage
+      localStorage.setItem('morseboard_hidden', newState);
 
-        // Update toggle button appearance
-        keyboardToggle.classList[isHidden ? "add" : "remove"]("disabled");
+      // Update toggle button appearance
+      keyboardToggle.classList[newState ? "add" : "remove"]("disabled");
+
+      // If we're in the game state, update the morse board visibility
+      if (this.hasStarted && this.game.state.current === 'game') {
+        const morseBoard = document.getElementById('morseboard');
+        if (morseBoard) {
+          if (newState) {
+            // Hide the morse board
+            morseBoard.style.display = 'none';
+            morseBoard.classList.add('hidden');
+          } else {
+            // Show the morse board
+            morseBoard.style.display = 'flex';
+            morseBoard.classList.remove('hidden');
+          }
+        }
 
         // Adjust the game canvas height when the morse board is hidden/shown
         if (this.game && this.game.scale) {
@@ -303,12 +342,15 @@ class TitleState {
       }
     };
 
-    // Initialize morse board visibility from localStorage
+    // Initialize morse board visibility preference in localStorage
+    // But don't actually show the morse board yet - it will be shown when the game starts
     const morseBoardHidden = getBoolFromLocalStore('morseboard_hidden');
-    const morseBoard = document.getElementById('morseboard');
-    if (morseBoardHidden && morseBoard) {
-      morseBoard.classList.add('hidden');
+
+    // Just update the toggle state based on the preference
+    if (morseBoardHidden) {
       keyboardToggle.classList.add('disabled');
+    } else {
+      keyboardToggle.classList.remove('disabled');
     }
 
     keyboardToggle.addEventListener('click', onKeyboardToggle, true);
@@ -495,34 +537,46 @@ class TitleState {
     });
 
     keyboardToggleNew.addEventListener('click', () => {
-      const morseBoard = document.getElementById('morseboard');
-      if (!morseBoard) return;
-
-      const isCurrentlyHidden = morseBoard.classList.contains('hidden');
-      const newState = isCurrentlyHidden; // Toggle to opposite of current state
-
-      morseBoard.classList.toggle('hidden');
+      // Get the current preference
+      const isCurrentlyHidden = localStorage.getItem('morseboard_hidden') === 'true';
+      const newState = !isCurrentlyHidden; // Toggle to opposite of current state
 
       // Store preference in localStorage
-      localStorage.setItem('morseboard_hidden', !newState);
+      localStorage.setItem('morseboard_hidden', newState);
 
       // Update toggle state
-      this.updateToggleState(keyboardToggleNew, newState);
+      this.updateToggleState(keyboardToggleNew, !newState);
 
       // Also update the original toggle for compatibility
       const keyboardToggle = document.querySelector(".keyboard-toggle");
       if (keyboardToggle) {
-        keyboardToggle.classList[!newState ? "add" : "remove"]("disabled");
+        keyboardToggle.classList[newState ? "add" : "remove"]("disabled");
       }
 
-      // Adjust the game canvas height when the morse board is hidden/shown
-      if (this.game && this.game.scale) {
-        // Give a small delay to allow the DOM to update
-        setTimeout(() => {
-          this.game.scale.setGameSize(this.game.width, this.game.height);
-          // Force a resize event to update the layout
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
+      // If we're in the game state, update the morse board visibility
+      if (this.hasStarted && this.game.state.current === 'game') {
+        const morseBoard = document.getElementById('morseboard');
+        if (morseBoard) {
+          if (newState) {
+            // Hide the morse board
+            morseBoard.style.display = 'none';
+            morseBoard.classList.add('hidden');
+          } else {
+            // Show the morse board
+            morseBoard.style.display = 'flex';
+            morseBoard.classList.remove('hidden');
+          }
+        }
+
+        // Adjust the game canvas height when the morse board is hidden/shown
+        if (this.game && this.game.scale) {
+          // Give a small delay to allow the DOM to update
+          setTimeout(() => {
+            this.game.scale.setGameSize(this.game.width, this.game.height);
+            // Force a resize event to update the layout
+            window.dispatchEvent(new Event('resize'));
+          }, 100);
+        }
       }
     });
 
@@ -756,7 +810,21 @@ class TitleState {
     startButton.fill = "#F1E4D4";
     startButton.anchor.setTo(0.5);
     startButton.font = config.typography.font;
-    // Reating animation for start button
+
+    // Make the start button interactive and clickable
+    startButton.inputEnabled = true;
+    startButton.input.useHandCursor = true;
+
+    // Add a direct click handler to the start button
+    startButton.events.onInputDown.add(() => {
+      if (!this.hasStarted) {
+        console.log('Start button clicked directly');
+        this.start();
+        this.hasStarted = true;
+      }
+    }, this);
+
+    // Pulsing animation for start button
     const startButtonTween = this.game.add
       .tween(startButton)
       .to({ alpha: 0.4 }, 600, "Linear", true, 0, -1);
@@ -778,16 +846,59 @@ class TitleState {
   start() {
     // Prevent game from restarting on user input
     if (!this.hasStarted) {
-      // Check whether we should play video or not
-      this.checkWatchedIntro().then((hasViewedIntro) => {
-        document.getElementById("button").style.display = "none";
-        this.game.state.start(
-          hasViewedIntro ? "game" : "intro",
-          true,
-          false,
-          this.letterScoreDict
-        );
-      });
+      this.hasStarted = true; // Set this immediately to prevent double-starts
+      console.log('Title state start method called');
+
+      try {
+        // Check whether we should play video or not
+        this.checkWatchedIntro().then((hasViewedIntro) => {
+          console.log('Has viewed intro:', hasViewedIntro);
+
+          // Hide the start button
+          const button = document.getElementById("button");
+          if (button) {
+            button.style.display = "none";
+          } else {
+            console.error('Button element not found');
+          }
+
+          // Store that we've seen the intro
+          if (!hasViewedIntro) {
+            localStorage.setItem('intro', 'true');
+          }
+
+          console.log('Starting game state...');
+
+          // Start the appropriate game state
+          const nextState = hasViewedIntro ? "game" : "intro";
+          console.log('Next state:', nextState);
+
+          // Initialize the course before starting the game state
+          if (nextState === "game" && !this.game.course) {
+            console.log('Initializing course');
+            this.game.course = {
+              lettersToLearn: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+            };
+          }
+
+          // The morse board will be shown by the game state if needed
+
+          // Start the game state with a slight delay to ensure everything is ready
+          setTimeout(() => {
+            console.log('Starting state:', nextState);
+            this.game.state.start(
+              nextState,
+              true,
+              false,
+              this.letterScoreDict
+            );
+          }, 100);
+        }).catch(error => {
+          console.error('Error checking watched intro:', error);
+        });
+      } catch (error) {
+        console.error('Error in title state start method:', error);
+      }
     }
   }
 
