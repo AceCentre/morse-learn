@@ -4,6 +4,15 @@ class MorseBoard {
   constructor(options) {
     this.timeout = null;
     this.morseDictionary = morseToEnglish;
+
+    // Check for saved one-switch mode preference
+    if (typeof Storage !== "undefined" && options.loadPreferences !== false) {
+      const savedOneSwitchMode = localStorage.getItem("one_switch_mode");
+      if (savedOneSwitchMode !== null) {
+        options.oneSwitchMode = savedOneSwitchMode === "true";
+      }
+    }
+
     this.config = this.mergeSettings(options);
     this.game = options.game;
     this.create();
@@ -32,6 +41,10 @@ class MorseBoard {
       output: true,
       sounds: true,
       onCommit: function onCommit() {},
+      // One-switch mode settings
+      oneSwitchMode: false,
+      oneSwitchKeyMap: [88], // x key
+      oneSwitchTimeout: 500, // ms to differentiate between dot and dash
     };
     var userSttings = options;
     for (var attrname in userSttings) {
@@ -60,6 +73,12 @@ class MorseBoard {
     this.dashButton = document.getElementById("dash");
     this.dashButton.setAttribute("tabindex", "0");
 
+    // Initialize one-switch mode variables
+    this.switchPressStartTime = 0;
+    this.oneSwitchKeyPressed = false;
+    this.progressIndicator = document.getElementById("one-switch-progress");
+    this.progressAnimationFrame = null;
+
     if (this.config.sounds && !this.detectIE()) {
       this.dotAudio = document.createElement("audio");
       var dotSource = document.createElement("source");
@@ -81,26 +100,126 @@ class MorseBoard {
       document.body.appendChild(this.dashAudio);
     }
 
-    window.addEventListener("keydown", this.onKeydown.bind(this), false);
+    // Bind event handlers to preserve 'this' context
+    this.boundOnKeydown = this.onKeydown.bind(this);
+    this.boundOnKeyup = this.onKeyup.bind(this);
+    this.boundOnClick = this.onClick.bind(this);
+    this.boundCommit = this.commit.bind(this);
 
-    this.dotButton.addEventListener("click", this.onClick.bind(this), false);
-    this.dashButton.addEventListener("click", this.onClick.bind(this), false);
+    window.addEventListener("keydown", this.boundOnKeydown, false);
 
-    this.output.addEventListener("commit", this.commit.bind(this), false);
+    // Add keyup event listener for one-switch mode
+    if (this.config.oneSwitchMode) {
+      window.addEventListener("keyup", this.boundOnKeyup, false);
+    }
+
+    this.dotButton.addEventListener("click", this.boundOnClick, false);
+    this.dashButton.addEventListener("click", this.boundOnClick, false);
+
+    this.output.addEventListener("commit", this.boundCommit, false);
+
+    // Update keyboard hint based on mode
+    this.updateKeyboardHint();
   }
 
   onKeydown(e) {
     var code = e.keyCode;
-    if (
-      this.config.dotKeyMap.indexOf(code) > -1
-    ) {
+
+    // Handle one-switch mode key press
+    if (this.config.oneSwitchMode && this.config.oneSwitchKeyMap.indexOf(code) > -1) {
+      // Prevent repeated keydown events while key is held
+      if (!this.oneSwitchKeyPressed) {
+        this.oneSwitchKeyPressed = true;
+        this.switchPressStartTime = Date.now();
+
+        // Start animating the progress indicator
+        this.startProgressAnimation();
+      }
+      return;
+    }
+
+    // Handle regular two-switch mode
+    if (this.config.dotKeyMap.indexOf(code) > -1) {
       this.dotButton.click();
-    } else if (
-      this.config.dashKeyMap.indexOf(code) > -1
-    ) {
+    } else if (this.config.dashKeyMap.indexOf(code) > -1) {
       this.dashButton.click();
     } else if (code === 32) { // Space key for immediate commit
       this.commitCurrentSequence();
+    }
+  }
+
+  startProgressAnimation() {
+    // Cancel any existing animation
+    if (this.progressAnimationFrame) {
+      cancelAnimationFrame(this.progressAnimationFrame);
+    }
+
+    // Reset progress indicator
+    if (this.progressIndicator) {
+      this.progressIndicator.style.width = "0%";
+
+      // Start the animation loop
+      const startTime = this.switchPressStartTime;
+      const threshold = this.config.oneSwitchTimeout;
+
+      const animate = () => {
+        if (!this.oneSwitchKeyPressed) return;
+
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(100, (elapsed / threshold) * 100);
+
+        // Update the progress bar width
+        this.progressIndicator.style.width = progress + "%";
+
+        // Change color when crossing the threshold
+        if (progress >= 100) {
+          this.progressIndicator.style.backgroundColor = "#ef4136"; // Red for dash
+        } else {
+          this.progressIndicator.style.backgroundColor = "#00a651"; // Green for dot
+        }
+
+        // Continue animation
+        this.progressAnimationFrame = requestAnimationFrame(animate);
+      };
+
+      // Start animation
+      this.progressAnimationFrame = requestAnimationFrame(animate);
+    }
+  }
+
+  onKeyup(e) {
+    var code = e.keyCode;
+
+    // Only process keyup for one-switch mode
+    if (this.config.oneSwitchMode && this.config.oneSwitchKeyMap.indexOf(code) > -1) {
+      if (this.oneSwitchKeyPressed) {
+        var pressDuration = Date.now() - this.switchPressStartTime;
+
+        // Stop the progress animation
+        if (this.progressAnimationFrame) {
+          cancelAnimationFrame(this.progressAnimationFrame);
+          this.progressAnimationFrame = null;
+        }
+
+        // Reset progress indicator with a small delay to show the final state
+        setTimeout(() => {
+          if (this.progressIndicator) {
+            this.progressIndicator.style.width = "0%";
+          }
+        }, 300);
+
+        // Determine if it's a dot or dash based on press duration
+        if (pressDuration < this.config.oneSwitchTimeout) {
+          // Short press = dot
+          this.dotButton.click();
+        } else {
+          // Long press = dash
+          this.dashButton.click();
+        }
+
+        // Reset state
+        this.oneSwitchKeyPressed = false;
+      }
     }
   }
 
@@ -287,10 +406,23 @@ class MorseBoard {
   }
 
   destroy() {
-    window.removeEventListener("keydown", this.onKeydown);
-    this.dotButton.removeEventListener("click", this.onClick);
-    this.dashButton.removeEventListener("click", this.onClick);
-    this.output.removeEventListener("commit", this.commit);
+    window.removeEventListener("keydown", this.boundOnKeydown);
+
+    // Remove keyup event listener if one-switch mode was enabled
+    if (this.config.oneSwitchMode) {
+      window.removeEventListener("keyup", this.boundOnKeyup);
+    }
+
+    // Cancel any ongoing animation
+    if (this.progressAnimationFrame) {
+      cancelAnimationFrame(this.progressAnimationFrame);
+      this.progressAnimationFrame = null;
+    }
+
+    this.dotButton.removeEventListener("click", this.boundOnClick);
+    this.dashButton.removeEventListener("click", this.boundOnClick);
+    this.output.removeEventListener("commit", this.boundCommit);
+
     if (this.config.notification && this.el) {
       document.body.removeChild(this.el);
       if (this.fadeTimeout) {
@@ -323,6 +455,61 @@ class MorseBoard {
       return true;
     }
     return false;
+  }
+
+  updateKeyboardHint() {
+    // Get the keyboard hint element
+    const keyboardHint = document.querySelector(".keyboard-hint .key-row");
+    if (!keyboardHint) return;
+
+    if (this.config.oneSwitchMode) {
+      // Update hint text for one-switch mode
+      const oneSwitchKey = String.fromCharCode(this.config.oneSwitchKeyMap[0]);
+      keyboardHint.innerHTML = `
+        <span>${oneSwitchKey} key: Short press for dot, long press for dash</span>
+        <span>Commit: Space</span>
+      `;
+    } else {
+      // Default hint text for two-switch mode
+      keyboardHint.innerHTML = `
+        <span>Dot: J or .</span>
+        <span>Dash: K or -</span>
+        <span>Commit: Space</span>
+      `;
+    }
+  }
+
+  toggleOneSwitchMode(enable) {
+    // Update the configuration
+    this.config.oneSwitchMode = enable;
+
+    // Add or remove keyup event listener based on mode
+    if (enable) {
+      window.addEventListener("keyup", this.boundOnKeyup, false);
+    } else {
+      window.removeEventListener("keyup", this.boundOnKeyup);
+
+      // Reset progress indicator when disabling one-switch mode
+      if (this.progressIndicator) {
+        this.progressIndicator.style.width = "0%";
+      }
+
+      // Cancel any ongoing animation
+      if (this.progressAnimationFrame) {
+        cancelAnimationFrame(this.progressAnimationFrame);
+        this.progressAnimationFrame = null;
+      }
+    }
+
+    // Update the keyboard hint
+    this.updateKeyboardHint();
+
+    // Save preference to localStorage if available
+    if (typeof Storage !== "undefined") {
+      localStorage.setItem("one_switch_mode", enable);
+    }
+
+    return enable;
   }
 }
 

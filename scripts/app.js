@@ -40,6 +40,31 @@ class App {
     window.GameApp = window.GameApp || {};
     window.GameApp.assetPaths = assetPathsModule;
 
+    // Add global function to toggle one-switch mode
+    window.GameApp.toggleOneSwitchMode = (enable) => {
+      // Store the setting in localStorage
+      if (typeof Storage !== "undefined") {
+        localStorage.setItem("one_switch_mode", enable);
+      }
+
+      // Update the game state if it exists
+      if (this.game && this.game.state) {
+        // Store in game object for access across states
+        this.game.oneSwitchMode = enable;
+
+        // If we're in the game state, update the morseBoard
+        if (this.game.state.current === 'game') {
+          const gameState = this.game.state.states.game;
+          if (gameState && gameState.gameSpace && gameState.gameSpace.morseBoard) {
+            gameState.gameSpace.morseBoard.toggleOneSwitchMode(enable);
+            return true;
+          }
+        }
+      }
+
+      return false;
+    };
+
     // Handle clicking of modal
     document.getElementById('button').addEventListener('click', () => {
       this.modalShow = this.modalShow ? false : true;

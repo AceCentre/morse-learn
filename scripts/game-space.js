@@ -101,6 +101,10 @@ class GameSpace {
     this.newLetterArray.sort();
     this.loadLetters();
 
+    // Check for saved one-switch mode preference
+    const oneSwitchMode = typeof Storage !== "undefined" ?
+      localStorage.getItem("one_switch_mode") === "true" : false;
+
     this.morseBoard = new MorseBoard({
       debounce: 2e3,
       dashSoundPath: window.GameApp.assetPaths.dashSound,
@@ -110,6 +114,10 @@ class GameSpace {
       onCommit: (e) =>  {
         this.checkMatch(e.letter ? e.letter : "");
       },
+      // Initialize one-switch mode from saved preference
+      oneSwitchMode: oneSwitchMode,
+      oneSwitchKeyMap: [88], // X key
+      oneSwitchTimeout: 500, // ms
     });
 
     setTimeout(() => {
