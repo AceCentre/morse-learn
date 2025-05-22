@@ -278,18 +278,33 @@ class CongratulationsState {
   }
 
   showStatsButton() {
-    // Create a stats button that will be visible in the game state
-    const statsButton = document.createElement('a');
-    statsButton.href = '#';
-    statsButton.title = 'View Statistics';
-    statsButton.className = 'item stats-button';
-    statsButton.innerHTML = '<i class="fa fa-2x fa-chart-bar"></i><span>View Statistics</span>';
-    statsButton.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.showStatistics();
-    });
+    try {
+      // Create a stats button that will be visible in the game state
+      const statsButton = document.createElement('a');
+      statsButton.href = '#';
+      statsButton.title = 'View Statistics';
+      statsButton.className = 'item stats-button';
+      statsButton.innerHTML = '<i class="fa fa-2x fa-chart-bar"></i><span>View Statistics</span>';
+      statsButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showStatistics();
+      });
 
-    document.querySelector('.tl-btn-group').appendChild(statsButton);
+      // Make sure the button group exists
+      let btnGroup = document.querySelector('.tl-btn-group');
+      if (!btnGroup) {
+        console.log('Creating .tl-btn-group element');
+        btnGroup = document.createElement('div');
+        btnGroup.className = 'tl-btn-group';
+        btnGroup.style.display = 'flex'; // Make sure it's visible
+        document.body.appendChild(btnGroup);
+      }
+
+      // Append the stats button
+      btnGroup.appendChild(statsButton);
+    } catch (error) {
+      console.error('Error in showStatsButton method:', error);
+    }
   }
 
   continueLearning() {
