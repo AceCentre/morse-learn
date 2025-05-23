@@ -27,9 +27,26 @@ class CongratulationsState {
   }
 
   init(params) {
+    console.log('Congratulations state init called with params:', params);
     this.letterScoreDict = params.letterScoreDict || {};
     this.analyticsData = params.analyticsData || null;
     this.currentCourse = params.currentCourse || 'alphabet';
+
+    // Make sure the course is properly initialized
+    if (!this.game.course) {
+      console.log('Game course not initialized, using global course');
+      if (window.GameApp && window.GameApp.course) {
+        this.game.course = window.GameApp.course;
+      } else {
+        console.log('Creating default course in congratulations state');
+        const Course = require('./course').Course;
+        this.game.course = new Course(config.courses[this.currentCourse]);
+      }
+    }
+
+    // Update the course property
+    this.course = this.game.course;
+    console.log('Congratulations state initialized with course:', this.currentCourse);
   }
 
   create() {
@@ -501,7 +518,11 @@ class CongratulationsState {
 
     if (hasNextCourse) {
       // Next Level button - make it prominent
-      const nextLevelText = 'Next Level: Numbers →';
+      // Get the next course name from the config
+      const nextCourseName = currentCourseConfig.nextCourse;
+      const nextCourseConfig = config.courses[nextCourseName];
+      const nextCourseDisplayName = nextCourseConfig ? nextCourseConfig.name : 'Next Level';
+      const nextLevelText = `Next Level: ${nextCourseDisplayName} →`;
 
       // Adjust button size based on screen size
       const nextBtnWidth = isMobile ? 240 : 300;
@@ -728,34 +749,57 @@ class CongratulationsState {
   }
 
   goToNextLevel() {
+    console.log('goToNextLevel called, current course:', this.currentCourse);
+
     // Get the next course from the current course config
     const currentCourseConfig = config.courses[this.currentCourse];
     if (currentCourseConfig && currentCourseConfig.nextCourse) {
       const nextCourseName = currentCourseConfig.nextCourse;
+      console.log('Next course name:', nextCourseName);
+
       const nextCourse = config.courses[nextCourseName];
+      console.log('Next course config:', nextCourse);
 
       if (nextCourse) {
-        // Create a new Course instance with the next course config
-        const Course = require('./course').Course;
-        const newCourse = new Course(nextCourse);
+        try {
+          // Create a new Course instance with the next course config
+          const Course = require('./course').Course;
+          const newCourse = new Course(nextCourse);
+          console.log('Created new course instance:', newCourse);
 
-        // Update the global course
-        window.GameApp.course = newCourse;
+          // Update the global course and game course
+          window.GameApp.course = newCourse;
+          this.game.course = newCourse;
+          console.log('Updated global course to:', nextCourseName);
 
-        // Reset the letter score dictionary for the new course
-        const newLetterScoreDict = {};
-        newCourse.lettersToLearn.forEach(letter => {
-          newLetterScoreDict[letter] = 0;
-        });
+          // Reset the letter score dictionary for the new course
+          const newLetterScoreDict = {};
+          newCourse.lettersToLearn.forEach(letter => {
+            newLetterScoreDict[letter] = 0;
+          });
+          console.log('Created new letter score dictionary for next course');
 
-        // Save the current course progress before switching
-        if (typeof Storage !== 'undefined') {
-          localStorage.setItem(currentCourseConfig.storageKey, JSON.stringify(this.letterScoreDict));
+          // Save the current course progress before switching
+          if (typeof Storage !== 'undefined') {
+            localStorage.setItem(currentCourseConfig.storageKey, JSON.stringify(this.letterScoreDict));
+            console.log('Saved current course progress to localStorage');
+          }
+
+          // Update the global config.course value to match the next course
+          config.course = nextCourseName;
+          console.log('Updated config.course to:', nextCourseName);
+
+          // Start the game with the new course
+          console.log('Starting game state with new course...');
+          this.game.state.start('game', true, false, newLetterScoreDict);
+        } catch (error) {
+          console.error('Error transitioning to next course:', error);
         }
-
-        // Start the game with the new course
-        this.game.state.start('game', true, false, newLetterScoreDict);
+      } else {
+        console.error('Next course config not found for:', nextCourseName);
       }
+    } else {
+      console.log('No next course defined for current course:', this.currentCourse);
     }
   }
 
