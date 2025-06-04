@@ -81,7 +81,7 @@ const pool = mysql.createPool({
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -107,7 +107,7 @@ function requireDataExportPassword(req, res, next) {
 // Data export page is now served by the static site at /data-export.html
 
 // Analytics endpoint
-app.post('/api/analytics', async (req, res) => {
+app.post('/analytics', async (req, res) => {
   try {
     const body = req.body;
 
@@ -194,7 +194,7 @@ app.post('/api/analytics', async (req, res) => {
 });
 
 // Public data dump endpoint - JSON format (password protected with pagination)
-app.get('/api/data-dump', requireDataExportPassword, async (req, res) => {
+app.get('/data-dump', requireDataExportPassword, async (req, res) => {
   try {
     // Pagination parameters
     const page = parseInt(req.query.page) || 1;
@@ -273,7 +273,7 @@ app.get('/api/data-dump', requireDataExportPassword, async (req, res) => {
 });
 
 // Sample data endpoint (no password required, limited to 100 records)
-app.get('/api/data-sample', async (req, res) => {
+app.get('/data-sample', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT
@@ -324,7 +324,7 @@ app.get('/api/data-sample', async (req, res) => {
 });
 
 // Public data dump endpoint - CSV format (password protected with pagination)
-app.get('/api/data-dump/csv', requireDataExportPassword, async (req, res) => {
+app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
   try {
     // Pagination parameters
     const page = parseInt(req.query.page) || 1;
@@ -389,7 +389,7 @@ app.get('/api/data-dump/csv', requireDataExportPassword, async (req, res) => {
 });
 
 // Public statistics endpoint (cached to reduce database load)
-app.get('/api/stats', async (req, res) => {
+app.get('/stats', async (req, res) => {
   try {
     // Check cache first
     const now = Date.now();
