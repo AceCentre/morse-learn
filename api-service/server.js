@@ -61,10 +61,13 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT, 10),
-  ssl: {
-    // Use the ca-certificate.crt file from the root directory
-    ca: require('fs').readFileSync(path.join(__dirname, '../ca-certificate.crt')),
+  ssl: process.env.SSL_CERT_PATH ? {
+    // Expand the tilde to the home directory and read SSL certificate
+    ca: fs.readFileSync(process.env.SSL_CERT_PATH.replace(/^~/, process.env.HOME || '~')),
     rejectUnauthorized: true
+  } : {
+    // Fallback for environments without custom SSL cert
+    rejectUnauthorized: false
   },
   waitForConnections: true,
   connectionLimit: 10,
