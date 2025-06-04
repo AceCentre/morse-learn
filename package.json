@@ -21,7 +21,7 @@
     "> 0.5%"
   ],
   "scripts": {
-    "build": "parcel build index.html --public-url ./",
+    "build": "parcel build index.html data-export.html --public-url ./",
     "deploy": "npm run build; gcloud app deploy --project=gweb-morse-tts",
     "eslint": "eslint scripts",
     "precommit": "true",
