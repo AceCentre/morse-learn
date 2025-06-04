@@ -1,5 +1,8 @@
-require('dotenv').config({ path: '../.env.local' });
-require('dotenv').config(); // Also load from local .env if it exists
+// Only load local env files in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: '../.env.local' });
+  require('dotenv').config(); // Also load from local .env if it exists
+}
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
@@ -55,6 +58,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Create MySQL connection pool
+console.log('SSL_CERT_PATH:', process.env.SSL_CERT_PATH);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
