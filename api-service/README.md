@@ -36,6 +36,40 @@ This is the API service for the Morse Learn application. It handles analytics da
   - Stores the data in the MySQL database
   - Returns a 200 status code with a JSON response: `{ "message": "Successfully logged progress for {userIdentifier}" }`
 
+### Public Data Export
+- `GET /data-export` (🆓 Public Access)
+  - Serves a public HTML interface for accessing data dumps and statistics
+  - Provides download links and live statistics display
+  - No password required for viewing the interface
+
+- `GET /api/data-dump` (🔒 Password Protected, Paginated)
+  - Returns anonymized training data in JSON format
+  - Supports pagination: `?page=1&limit=1000` (max 10,000 per request)
+  - Includes metadata about the export and pagination info
+  - User identifiers are anonymized for privacy
+
+- `GET /api/data-dump/csv` (🔒 Password Protected, Paginated)
+  - Returns anonymized training data in CSV format
+  - Supports pagination: `?page=1&limit=5000` (max 50,000 per request)
+  - Suitable for spreadsheet applications and data analysis tools
+  - Automatically downloads as a file with page number
+
+- `GET /api/data-sample` (🆓 Free Access)
+  - Returns a sample of 100 records for evaluation
+  - No password required
+  - Perfect for testing and small-scale analysis
+
+- `GET /api/stats` (🆓 Free Access, Cached)
+  - Returns comprehensive statistics about Morse Learn usage
+  - Includes user counts, progress distributions, settings preferences
+  - Provides time-based analytics and completion rates
+  - Cached for 10 minutes to reduce database load
+
+### Password Protection
+Set the `DATA_EXPORT_PASSWORD` environment variable to enable password protection for data exports. Password can be provided via:
+- Query parameter: `?password=YOUR_PASSWORD`
+- HTTP header: `X-Data-Export-Password: YOUR_PASSWORD`
+
 ## Deployment
 
 ### DigitalOcean App Platform

@@ -23,6 +23,17 @@ npm install && npm rebuild node-sass && npm run browserify && npm run sass
 
 The application includes an API service for collecting analytics data. The API service is built with Express.js and connects to a MySQL database on DigitalOcean.
 
+### Public Data Export
+
+The application now includes a public data export feature that allows researchers and developers to access anonymized training data:
+
+- **Data Export Page**: Visit `/data-export` for a user-friendly interface
+- **JSON Export**: `/api/data-dump` - Complete dataset in JSON format
+- **CSV Export**: `/api/data-dump/csv` - Spreadsheet-friendly format
+- **Live Statistics**: `/api/stats` - Real-time usage statistics and analytics
+
+All exported data is anonymized to protect user privacy while preserving learning patterns for research purposes.
+
 ### Setup and Deployment
 
 For detailed deployment instructions, see:
