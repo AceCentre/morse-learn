@@ -106,35 +106,360 @@ function requireDataExportPassword(req, res, next) {
 
 // Serve the data export page at /data-export
 app.get('/data-export', (req, res) => {
-  // Try multiple possible paths for the HTML file
-  const possiblePaths = [
-    path.join(__dirname, '../data-export.html'),
-    path.join(__dirname, '../../data-export.html'),
-    path.join(process.cwd(), 'data-export.html'),
-    path.join(process.cwd(), '../data-export.html')
-  ];
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Learn - Public Data Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn.secondary {
+            background-color: #6c757d;
+        }
+        .btn.secondary:hover {
+            background-color: #545b62;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            display: block;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .description {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Morse Learn - Public Data Export</h1>
 
-  let filePath = null;
-  for (const testPath of possiblePaths) {
-    if (fs.existsSync(testPath)) {
-      filePath = testPath;
-      break;
-    }
-  }
+        <div class="section">
+            <h2>📊 Live Statistics</h2>
+            <div class="description">
+                Real-time statistics about Morse Learn usage patterns and learning progress.
+            </div>
+            <div id="stats-loading" class="loading">Loading statistics...</div>
+            <div id="stats-error" class="error" style="display: none;"></div>
+            <div id="stats-container" class="stats-container" style="display: none;"></div>
+        </div>
 
-  if (filePath) {
-    res.sendFile(filePath);
-  } else {
-    console.error('data-export.html not found. Tried paths:', possiblePaths);
-    res.status(404).json({
-      error: 'Data export page not found',
-      debug: {
-        cwd: process.cwd(),
-        dirname: __dirname,
-        triedPaths: possiblePaths
-      }
-    });
-  }
+        <div class="section">
+            <h2>📥 Download Data</h2>
+            <div class="description">
+                Download the complete anonymized dataset of Morse Learn training sessions.
+                All user identifiers have been anonymized to protect privacy while preserving
+                the learning patterns and progress data for research purposes.
+                <br><br>
+                <strong>🔒 Password Required:</strong> Data downloads require a password to prevent abuse and manage costs.
+            </div>
+
+            <div style="margin: 20px 0; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+                <label for="password" style="display: block; margin-bottom: 5px; font-weight: bold;">Access Password:</label>
+                <input type="password" id="password" placeholder="Enter data export password"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; margin-bottom: 10px;">
+                <small style="color: #666;">Contact the Ace Centre team for access credentials.</small>
+            </div>
+
+            <div class="download-buttons">
+                <button onclick="downloadData('json')" class="btn">
+                    📄 Download JSON (Paginated)
+                </button>
+                <button onclick="downloadData('csv')" class="btn secondary">
+                    📊 Download CSV (Paginated)
+                </button>
+                <a href="/api/data-sample" class="btn secondary" target="_blank">
+                    🔍 Free Sample (100 records)
+                </a>
+                <a href="/api/stats" class="btn secondary" target="_blank">
+                    📈 View Raw Statistics
+                </a>
+            </div>
+
+            <div style="margin-top: 15px; padding: 10px; background-color: #e9ecef; border-radius: 5px; font-size: 0.9em;">
+                <strong>💡 Tip:</strong> Large dataset is paginated to reduce costs.
+                JSON: 1,000 records/page, CSV: 5,000 records/page.
+                Use the pagination parameters to download in chunks.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Data Description</h2>
+            <div class="description">
+                <h3>Dataset Fields:</h3>
+                <ul>
+                    <li><strong>anonymous_user_id:</strong> Anonymized user identifier</li>
+                    <li><strong>progress_dump:</strong> JSON string containing letter-by-letter progress scores</li>
+                    <li><strong>progress_percent:</strong> Overall completion percentage (0-100)</li>
+                    <li><strong>time_played_ms:</strong> Session duration in milliseconds</li>
+                    <li><strong>time_played_minutes:</strong> Session duration in minutes (calculated)</li>
+                    <li><strong>date_created:</strong> Date of the training session (day precision)</li>
+                    <li><strong>visual_hints:</strong> Whether visual hints were enabled (true/false)</li>
+                    <li><strong>speech_hints:</strong> Whether speech hints were enabled (true/false)</li>
+                    <li><strong>sound:</strong> Whether sound was enabled (true/false)</li>
+                    <li><strong>settings_dump:</strong> JSON string of all settings</li>
+                    <li><strong>progress_detail:</strong> Additional progress details (if available)</li>
+                    <li><strong>settings_changed:</strong> Whether settings were changed during session</li>
+                </ul>
+
+                <h3>Privacy & Anonymization:</h3>
+                <ul>
+                    <li>Original user identifiers have been replaced with anonymous IDs</li>
+                    <li>Exact timestamps are rounded to day precision</li>
+                    <li>No personally identifiable information is included</li>
+                    <li>Data is suitable for research and analysis purposes</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                Morse Learn is an open-source project by
+                <a href="https://acecentre.org.uk" target="_blank">Ace Centre</a>,
+                adapted from the original Google Creative Lab project.
+            </p>
+            <p>
+                <a href="https://github.com/AceCentre/morse-learn" target="_blank">View on GitHub</a> |
+                <a href="https://morse-learn.acecentre.net" target="_blank">Try Morse Learn</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Load and display statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error('Failed to load statistics');
+
+                const stats = await response.json();
+                displayStats(stats);
+
+                document.getElementById('stats-loading').style.display = 'none';
+                document.getElementById('stats-container').style.display = 'grid';
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('stats-loading').style.display = 'none';
+                document.getElementById('stats-error').style.display = 'block';
+                document.getElementById('stats-error').textContent = 'Failed to load statistics: ' + error.message;
+            }
+        }
+
+        function displayStats(stats) {
+            const container = document.getElementById('stats-container');
+            const overview = stats.overview;
+            const timeStats = stats.time_statistics;
+            const settings = stats.settings_preferences;
+            const progress = stats.progress_distribution;
+            const recent = stats.recent_activity_7_days;
+
+            // Main overview stats
+            let html = \`
+                <div class="stat-card">
+                    <span class="stat-number">\${overview.total_unique_users.toLocaleString()}</span>
+                    <div class="stat-label">Total Unique Learners</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">\${overview.total_sessions.toLocaleString()}</span>
+                    <div class="stat-label">Total Training Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">\${overview.average_progress_percent}%</span>
+                    <div class="stat-label">Average Progress</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">\${overview.completion_rate}%</span>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">\${Math.round(timeStats.average_time_played_minutes)}</span>
+                    <div class="stat-label">Avg. Minutes per Session</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">\${overview.users_completed}</span>
+                    <div class="stat-label">Users Completed (100%)</div>
+                </div>
+            \`;
+
+            // Add recent activity section
+            html += \`
+                <div style="grid-column: 1 / -1; margin-top: 20px;">
+                    <h3>🔥 Recent Activity (Last 7 Days)</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 15px 0;">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <span class="stat-number" style="color: white;">\${recent.users_started_learning.toLocaleString()}</span>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">🚀 Started Learning</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                            <span class="stat-number" style="color: white;">\${recent.users_completed.toLocaleString()}</span>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">🏆 Completed</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                            <span class="stat-number" style="color: white;">\${recent.active_learners.toLocaleString()}</span>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">📚 Active Learners</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                            <span class="stat-number" style="color: white;">\${recent.total_sessions.toLocaleString()}</span>
+                            <div class="stat-label" style="color: rgba(255,255,255,0.9);">💪 Training Sessions</div>
+                        </div>
+                    </div>
+                </div>
+            \`;
+
+            container.innerHTML = html;
+
+            // Add detailed breakdowns
+            const detailsHtml = \`
+                <div style="grid-column: 1 / -1; margin-top: 20px;">
+                    <h3>🎛️ Settings Preferences</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 15px 0;">
+                        \${settings.slice(0, 3).map(setting => \`
+                            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                                <div style="font-weight: bold; color: #007bff;">
+                                    \${setting.visual_hints ? '👁️' : '🚫'}
+                                    \${setting.speech_hints ? '🔊' : '🚫'}
+                                    \${setting.sound ? '🎵' : '🚫'}
+                                </div>
+                                <div style="font-size: 0.9em; color: #666; margin: 5px 0;">
+                                    \${setting.percentage_of_total}% of sessions
+                                </div>
+                                <div style="font-size: 0.8em; color: #888;">
+                                    Avg. Progress: \${setting.avg_progress_percent}%
+                                </div>
+                            </div>
+                        \`).join('')}
+                    </div>
+
+                    <h3>📊 Progress Distribution</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 15px 0;">
+                        \${progress.map(p => \`
+                            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; text-align: center;">
+                                <div style="font-weight: bold; color: #007bff;">\${p.progress_range}</div>
+                                <div style="font-size: 1.2em; margin: 5px 0;">\${p.user_count.toLocaleString()}</div>
+                                <div style="font-size: 0.8em; color: #666;">users</div>
+                            </div>
+                        \`).join('')}
+                    </div>
+                </div>
+            \`;
+
+            container.innerHTML += detailsHtml;
+        }
+
+        // Password-protected download function
+        function downloadData(format) {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                alert('Please enter the data export password first.');
+                return;
+            }
+
+            const baseUrl = format === 'json' ? '/api/data-dump' : '/api/data-dump/csv';
+            const url = \`\${baseUrl}?password=\${encodeURIComponent(password)}&page=1\`;
+
+            // Open in new tab
+            window.open(url, '_blank');
+        }
+
+        // Load stats when page loads
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+</body>
+</html>`;
+
+  res.send(html);
 });
 
 // Analytics endpoint
