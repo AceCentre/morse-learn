@@ -117,8 +117,8 @@ app.get('/data-export', (req, res) => {
   const path = require('path');
   const fs = require('fs');
 
-  // Serve the detailed data-export.html file from the root directory
-  const htmlPath = path.join(__dirname, '../data-export.html');
+  // Serve the detailed data-export.html file from the api-service directory
+  const htmlPath = path.join(__dirname, 'data-export.html');
 
   if (fs.existsSync(htmlPath)) {
     res.sendFile(htmlPath);
