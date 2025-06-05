@@ -104,7 +104,10 @@ function requireDataExportPassword(req, res, next) {
   next();
 }
 
-// Data export page is now served by the static site at /data-export.html
+// Serve the data export page at /data-export
+app.get('/data-export', (req, res) => {
+  res.sendFile(path.join(__dirname, '../data-export.html'));
+});
 
 // Analytics endpoint
 app.post('/analytics', async (req, res) => {
