@@ -119,7 +119,46 @@ function requireDataExportPassword(req, res, next) {
 
 // Serve the data export page at /data-export
 app.get('/data-export', (req, res) => {
-  res.send('<h1>Data Export Page</h1><p>This is a test version.</p>');
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Morse Learn - Data Export</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px; display: inline-block; }
+        .btn:hover { background: #0056b3; }
+      </style>
+    </head>
+    <body>
+      <h1>🔬 Morse Learn - Data Export</h1>
+      <p>Access anonymized learning data for research purposes.</p>
+
+      <h2>📊 Quick Links</h2>
+      <a href="/api/stats" class="btn">📈 View Statistics</a>
+      <a href="/api/data-sample" class="btn">🔍 Sample Data (100 records)</a>
+
+      <h2>🔒 Password-Protected Downloads</h2>
+      <p>Full dataset downloads require a password. Contact the Ace Centre team for access.</p>
+
+      <form onsubmit="downloadData(event)">
+        <input type="password" id="password" placeholder="Enter password" style="padding: 8px; margin: 5px;">
+        <button type="submit" class="btn">📄 Download JSON</button>
+      </form>
+
+      <script>
+        function downloadData(e) {
+          e.preventDefault();
+          const password = document.getElementById('password').value;
+          if (!password) { alert('Please enter password'); return; }
+          window.open('/api/data-dump?password=' + encodeURIComponent(password) + '&page=1');
+        }
+      </script>
+    </body>
+    </html>
+  `);
 });
 });
 
