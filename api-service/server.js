@@ -160,7 +160,6 @@ app.get('/data-export', (req, res) => {
     </html>
   `);
 });
-});
 
 // Analytics endpoint
 app.post('/analytics', async (req, res) => {
