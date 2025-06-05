@@ -67,14 +67,25 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT, 10),
-  ssl: process.env.SSL_CERT_PATH ? {
-    // Expand the tilde to the home directory and read SSL certificate
-    ca: fs.readFileSync(process.env.SSL_CERT_PATH.replace(/^~/, process.env.HOME || '~')),
-    rejectUnauthorized: true
-  } : {
-    // Fallback for environments without custom SSL cert
-    rejectUnauthorized: false
-  },
+  ssl: (() => {
+    if (process.env.SSL_CERT_PATH) {
+      try {
+        const certPath = process.env.SSL_CERT_PATH.replace(/^~/, process.env.HOME || '~');
+        if (fs.existsSync(certPath)) {
+          return {
+            ca: fs.readFileSync(certPath),
+            rejectUnauthorized: true
+          };
+        } else {
+          console.warn('SSL certificate file not found:', certPath);
+        }
+      } catch (error) {
+        console.warn('Error reading SSL certificate:', error.message);
+      }
+    }
+    // Fallback for environments without custom SSL cert or when cert file is missing
+    return { rejectUnauthorized: false };
+  })(),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
