@@ -12,5 +12,12 @@ dist*
 .env
 .env.local
 
+# Sensitive files - never commit these
+ca-certificate.crt
+*.crt
+*.key
+*.pem
+morse-learn.yaml
+
 # DigitalOcean App Platform configuration with sensitive data
 api-service/app-spec.yaml
