@@ -106,7 +106,35 @@ function requireDataExportPassword(req, res, next) {
 
 // Serve the data export page at /data-export
 app.get('/data-export', (req, res) => {
-  res.sendFile(path.join(__dirname, '../data-export.html'));
+  // Try multiple possible paths for the HTML file
+  const possiblePaths = [
+    path.join(__dirname, '../data-export.html'),
+    path.join(__dirname, '../../data-export.html'),
+    path.join(process.cwd(), 'data-export.html'),
+    path.join(process.cwd(), '../data-export.html')
+  ];
+
+  let filePath = null;
+  for (const testPath of possiblePaths) {
+    if (fs.existsSync(testPath)) {
+      filePath = testPath;
+      break;
+    }
+  }
+
+  if (filePath) {
+    res.sendFile(filePath);
+  } else {
+    console.error('data-export.html not found. Tried paths:', possiblePaths);
+    res.status(404).json({
+      error: 'Data export page not found',
+      debug: {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        triedPaths: possiblePaths
+      }
+    });
+  }
 });
 
 // Analytics endpoint
