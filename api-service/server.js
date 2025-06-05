@@ -85,6 +85,19 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Test endpoint for debugging
+app.get('/test', (req, res) => {
+  res.json({ message: 'Test endpoint working', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint for data-export
+app.get('/data-export-debug', (req, res) => {
+  res.json({
+    message: 'Data export debug endpoint working',
+    routes: app._router.stack.map(r => r.route?.path).filter(Boolean)
+  });
+});
+
 // Password protection middleware for data export endpoints
 function requireDataExportPassword(req, res, next) {
   const providedPassword = req.query.password || req.headers['x-data-export-password'];
