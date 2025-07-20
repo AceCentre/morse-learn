@@ -300,6 +300,10 @@ class TitleState {
 
     statsButton.addEventListener('click', onStatsClick, true);
 
+    
+
+    
+
     // Add keyboard controls toggle handler
     const onKeyboardToggle = (e) => {
       e.preventDefault();
@@ -717,6 +721,40 @@ class TitleState {
   }
 
   create() {
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'tl-btn-group';
+    document.body.appendChild(btnGroup);
+
+    let loadFromCodeButton = document.createElement('a');
+    loadFromCodeButton.href = '#';
+    loadFromCodeButton.title = 'Load from Code';
+    loadFromCodeButton.className = 'item';
+    loadFromCodeButton.innerHTML = '<i class="fa fa-2x fa-upload"></i><span>Load from Code</span>';
+    btnGroup.appendChild(loadFromCodeButton);
+
+    const onLoadFromCode = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const modal = document.getElementById('load-from-code-modal');
+      modal.style.display = 'block';
+
+      const closeButton = modal.querySelector('.close-button');
+      closeButton.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      const loadButton = modal.querySelector('#load-code-button');
+      loadButton.addEventListener('click', () => {
+        const code = document.getElementById('code-input').value;
+        if (code) {
+          this.game.state.states.game.loadFromCode(code);
+          modal.style.display = 'none';
+        }
+      });
+    };
+
+    loadFromCodeButton.addEventListener('click', onLoadFromCode, true);
+
     this.createShapes();
     this.createTitles();
 

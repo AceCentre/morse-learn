@@ -29,6 +29,7 @@ class GameState {
   }
 
   init(params) {
+    this.loadProgress();
     console.log('Game state init method called with params:', params);
     this.letterScoreDict = params || {};
 
@@ -94,6 +95,39 @@ class GameState {
   saveProgress() {
     if (typeof(Storage) !== 'undefined') {
       localStorage.setItem(this.course.storageKey, JSON.stringify(this.letterScoreDict));
+    }
+  }
+
+  // Load progress from localStorage
+  loadProgress() {
+    if (typeof(Storage) !== 'undefined') {
+      const savedProgress = localStorage.getItem(this.course.storageKey);
+      if (savedProgress) {
+        this.letterScoreDict = JSON.parse(savedProgress);
+      }
+    }
+  }
+
+  generateCode() {
+    const code = btoa(JSON.stringify(this.letterScoreDict));
+    return code;
+  }
+
+  loadFromCode(code) {
+    try {
+      console.log('Loading code:', code);
+      const decoded = atob(code);
+      console.log('Decoded:', decoded);
+      const progress = JSON.parse(decoded);
+      console.log('Parsed progress:', progress);
+      this.letterScoreDict = progress;
+      this.saveProgress();
+      if (this.parent && this.parent.header) {
+        this.parent.header.updateProgressLights(this.letterScoreDict);
+      }
+      console.log('Code loaded successfully');
+    } catch (e) {
+      console.error('Invalid code - Error details:', e.message, e);
     }
   }
 }

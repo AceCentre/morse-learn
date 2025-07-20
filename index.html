@@ -140,6 +140,12 @@
           <button id="stats-button-new" class="settings-button">
             <i class="fa fa-chart-bar"></i> View Statistics
           </button>
+          <button id="get-code-button" class="settings-button">
+            <i class="fa fa-download"></i> Get Code
+          </button>
+          <button id="load-code-button" class="settings-button">
+            <i class="fa fa-upload"></i> Load from Code
+          </button>
         </div>
       </div>
     </div>
@@ -160,6 +166,15 @@
           AceCentre
         </p>
         <img src="assets/images/logos-new.png" alt="The Ace Centre and Google logos" />
+      </div>
+    </div>
+    <div id="load-from-code-modal" class="modal-container" style="display: none;">
+      <div class="modal">
+        <h1>Load from Code</h1>
+        <button class="close-button"><i class="fa fa-times"></i></button>
+        <p>Enter your code below to load your progress.</p>
+        <input type="text" id="code-input" />
+        <button id="load-button" class="primary">Load</button>
       </div>
     </div>
     <div id="loading-overlay">

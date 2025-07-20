@@ -562,6 +562,7 @@ class GameSpace {
       word.pushDown(word.currentLetterIndex);
       word.currentLetterIndex++;
       this.letterScoreDict[letter] += 1;
+      this.parent.saveProgress();
 
       if (this.letterScoreDict[letter] > config.app.LEARNED_THRESHOLD + 2) {
         this.letterScoreDict[letter] = config.app.LEARNED_THRESHOLD + 2;

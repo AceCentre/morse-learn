@@ -244,6 +244,60 @@ class App {
       document.getElementById('button').style.display = 'block';
       document.getElementById('settings-button').style.display = 'block';
 
+
+
+      const getCodeButton = document.getElementById('get-code-button');
+      if (getCodeButton) {
+        getCodeButton.addEventListener('click', () => {
+          if (this.game.state.current === 'game') {
+            const gameState = this.game.state.states.game;
+            if (gameState) {
+              const code = gameState.generateCode();
+              prompt("Here is your code:", code);
+            }
+          }
+        });
+      }
+
+      const loadCodeButton = document.getElementById('load-code-button');
+      if (loadCodeButton && !loadCodeButton.hasAttribute('data-listener-added')) {
+        loadCodeButton.setAttribute('data-listener-added', 'true');
+        loadCodeButton.addEventListener('click', () => {
+          if (this.game.state.current === 'game') {
+            const modal = document.getElementById('load-from-code-modal');
+            modal.style.display = 'block';
+
+            const closeButton = modal.querySelector('.close-button');
+            if (closeButton && !closeButton.hasAttribute('data-listener-added')) {
+              closeButton.setAttribute('data-listener-added', 'true');
+              closeButton.addEventListener('click', () => {
+                modal.style.display = 'none';
+              });
+            }
+
+            const loadButton = modal.querySelector('#load-button');
+            if (loadButton && !loadButton.hasAttribute('data-listener-added')) {
+              loadButton.setAttribute('data-listener-added', 'true');
+              loadButton.addEventListener('click', () => {
+                const code = document.getElementById('code-input').value;
+                if (code) {
+                  const gameState = this.game.state.states.game;
+                  if (gameState) {
+                    gameState.loadFromCode(code);
+                    modal.style.display = 'none';
+                    // Close settings modal too
+                    const settingsModal = document.getElementById('settings-modal');
+                    if (settingsModal) {
+                      settingsModal.classList.remove('open');
+                    }
+                  }
+                }
+              });
+            }
+          }
+        });
+      }
+
       // Make sure the course is properly initialized
       if (!GameApp.course) {
         console.log('Creating default course in app.js');
