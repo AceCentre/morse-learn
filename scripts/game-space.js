@@ -1054,7 +1054,10 @@ const incrementAnalyticsCount = (key) => (letter) => {
     // If it is set we need to parse it
     analyticsData = JSON.parse(analyticsData)
   }
-
+  // Ensure the letter exists (EMPTY_ANALYTICS only has a-z; numbers/keyboard need init)
+  if (!analyticsData[letter]) {
+    analyticsData[letter] = { wrong: 0, correct: 0 };
+  }
   // Increment the wrong or correct count
   analyticsData[letter][key] = analyticsData[letter][key] + 1;
 
