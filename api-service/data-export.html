@@ -170,26 +170,34 @@
             <div class="description">
                 <h3>Dataset Fields:</h3>
                 <ul>
-                    <li><strong>anonymous_user_id:</strong> Anonymized user identifier</li>
-                    <li><strong>progress_dump:</strong> JSON string containing letter-by-letter progress scores</li>
+                    <li><strong>anonymous_user_id:</strong> Stable anonymized user identifier</li>
+                    <li><strong>anonymous_event_id:</strong> Stable anonymized event identifier for each exported row</li>
+                    <li><strong>user_event_index:</strong> Order of this event within the anonymized user's history</li>
+                    <li><strong>user_event_count:</strong> Total number of exported events for the anonymized user</li>
+                    <li><strong>progress_dump:</strong> Normalized JSON string containing letter-by-letter progress scores</li>
                     <li><strong>progress_percent:</strong> Overall completion percentage (0-100)</li>
-                    <li><strong>time_played_ms:</strong> Session duration in milliseconds</li>
-                    <li><strong>time_played_minutes:</strong> Session duration in minutes (calculated)</li>
-                    <li><strong>date_created:</strong> Date of the training session (day precision)</li>
+                    <li><strong>time_played_ms:</strong> Cumulative play time in milliseconds at export time</li>
+                    <li><strong>time_played_minutes:</strong> Cumulative play time in minutes (calculated)</li>
+                    <li><strong>date_created:</strong> Full timestamp for the exported event</li>
+                    <li><strong>date_created_day:</strong> Day-only convenience field derived from <code>date_created</code></li>
                     <li><strong>visual_hints:</strong> Whether visual hints were enabled (true/false)</li>
                     <li><strong>speech_hints:</strong> Whether speech hints were enabled (true/false)</li>
                     <li><strong>sound:</strong> Whether sound was enabled (true/false)</li>
-                    <li><strong>settings_dump:</strong> JSON string of all settings</li>
-                    <li><strong>progress_detail:</strong> Additional progress details (if available)</li>
+                    <li><strong>settings_dump:</strong> Normalized JSON string of current settings</li>
+                    <li><strong>progress_detail:</strong> Normalized JSON string of progress details</li>
                     <li><strong>settings_changed:</strong> Whether settings were changed during session</li>
+                    <li><strong>initial_visual_hints / initial_speech_hints / initial_sound:</strong> Settings from the user's first recorded event</li>
+                    <li><strong>initial_settings_dump:</strong> Normalized JSON string of initial settings</li>
+                    <li><strong>differs_from_initial_settings:</strong> Whether the current row differs from the user's initial recorded settings</li>
                 </ul>
                 
                 <h3>Privacy & Anonymization:</h3>
                 <ul>
-                    <li>Original user identifiers have been replaced with anonymous IDs</li>
-                    <li>Exact timestamps are rounded to day precision</li>
+                    <li>Original user and row identifiers are replaced with stable anonymized hashes</li>
+                    <li>No raw database IDs are exposed</li>
+                    <li>Full timestamps are exported to support longitudinal analysis</li>
                     <li>No personally identifiable information is included</li>
-                    <li>Data is suitable for research and analysis purposes</li>
+                    <li>JSON export fields are normalized to reduce schema inconsistencies across historical records</li>
                 </ul>
             </div>
         </div>

@@ -112,6 +112,135 @@ function requireDataExportPassword(req, res, next) {
   next();
 }
 
+function normalizeExportJsonText(value) {
+  if (!value) {
+    return value;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+
+  while (parsed && typeof parsed === 'object' && typeof parsed.data === 'string') {
+    try {
+      parsed = JSON.parse(parsed.data);
+    } catch (error) {
+      break;
+    }
+  }
+
+  return JSON.stringify(parsed);
+}
+
+function formatExportTimestamp(value) {
+  if (!value) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return value;
+}
+
+function buildExportRecord(row) {
+  const dateCreated = formatExportTimestamp(row.date_created);
+
+  return {
+    anonymous_user_id: row.anonymous_user_id,
+    anonymous_event_id: row.anonymous_event_id,
+    user_event_index: row.user_event_index,
+    user_event_count: row.user_event_count,
+    progress_dump: normalizeExportJsonText(row.progress_dump),
+    progress_percent: row.progress_percent,
+    time_played_ms: row.time_played,
+    time_played_minutes: Math.round(row.time_played / 1000 / 60 * 100) / 100,
+    date_created: dateCreated,
+    date_created_day: dateCreated ? dateCreated.slice(0, 10) : null,
+    visual_hints: row.visual_hints,
+    speech_hints: row.speech_hints,
+    sound: row.sound,
+    settings_dump: normalizeExportJsonText(row.settings_dump),
+    progress_detail: normalizeExportJsonText(row.progress_detail),
+    settings_changed: row.settings_changed,
+    initial_visual_hints: row.initial_visual_hints,
+    initial_speech_hints: row.initial_speech_hints,
+    initial_sound: row.initial_sound,
+    initial_settings_dump: normalizeExportJsonText(row.initial_settings_dump),
+    differs_from_initial_settings: Boolean(row.differs_from_initial_settings)
+  };
+}
+
+function csvEscape(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const text = String(value);
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  return text;
+}
+
+function getExportQuery(limitClause) {
+  return `
+    WITH first_rows AS (
+      SELECT
+        ranked.user_identifier,
+        ranked.visual_hints AS initial_visual_hints,
+        ranked.speech_hints AS initial_speech_hints,
+        ranked.sound AS initial_sound,
+        ranked.settings_dump AS initial_settings_dump
+      FROM (
+        SELECT
+          id,
+          user_identifier,
+          visual_hints,
+          speech_hints,
+          sound,
+          settings_dump,
+          ROW_NUMBER() OVER (PARTITION BY user_identifier ORDER BY date_created ASC, id ASC) AS user_row_rank
+        FROM progress_log
+      ) ranked
+      WHERE ranked.user_row_rank = 1
+    )
+    SELECT
+      CONCAT('user_', SHA2(p.user_identifier, 256)) AS anonymous_user_id,
+      CONCAT('event_', SHA2(CAST(p.id AS CHAR), 256)) AS anonymous_event_id,
+      p.progress_dump,
+      p.progress_percent,
+      p.time_played,
+      p.date_created,
+      p.visual_hints,
+      p.speech_hints,
+      p.sound,
+      p.settings_dump,
+      p.progress_detail,
+      p.settings_changed,
+      ROW_NUMBER() OVER (PARTITION BY p.user_identifier ORDER BY p.date_created ASC, p.id ASC) AS user_event_index,
+      COUNT(*) OVER (PARTITION BY p.user_identifier) AS user_event_count,
+      f.initial_visual_hints,
+      f.initial_speech_hints,
+      f.initial_sound,
+      f.initial_settings_dump,
+      (
+        f.initial_visual_hints <> p.visual_hints OR
+        f.initial_speech_hints <> p.speech_hints OR
+        f.initial_sound <> p.sound
+      ) AS differs_from_initial_settings
+    FROM progress_log p
+    JOIN first_rows f ON f.user_identifier = p.user_identifier
+    ORDER BY p.date_created DESC, p.id DESC
+    ${limitClause}
+  `;
+}
+
 // Serve the data export page at /data-export
 app.get('/data-export', (req, res) => {
   const path = require('path');
@@ -242,38 +371,8 @@ app.get('/data-dump', requireDataExportPassword, async (req, res) => {
     const totalPages = Math.ceil(totalRecords / limit);
 
     // Get paginated data
-    const [rows] = await pool.query(`
-      SELECT
-        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
-        progress_dump,
-        progress_percent,
-        time_played,
-        DATE(date_created) as date_created,
-        visual_hints,
-        speech_hints,
-        sound,
-        settings_dump,
-        progress_detail,
-        settings_changed
-      FROM progress_log
-      ORDER BY date_created DESC, id DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
-
-    const anonymizedData = rows.map(row => ({
-      anonymous_user_id: row.anonymous_user_id,
-      progress_dump: row.progress_dump,
-      progress_percent: row.progress_percent,
-      time_played_ms: row.time_played,
-      time_played_minutes: Math.round(row.time_played / 1000 / 60 * 100) / 100,
-      date_created: row.date_created,
-      visual_hints: row.visual_hints,
-      speech_hints: row.speech_hints,
-      sound: row.sound,
-      settings_dump: row.settings_dump,
-      progress_detail: row.progress_detail,
-      settings_changed: row.settings_changed
-    }));
+    const [rows] = await pool.query(getExportQuery('LIMIT ? OFFSET ?'), [limit, offset]);
+    const anonymizedData = rows.map(buildExportRecord);
 
     res.json({
       metadata: {
@@ -284,7 +383,8 @@ app.get('/data-dump', requireDataExportPassword, async (req, res) => {
         records_in_page: anonymizedData.length,
         export_date: new Date().toISOString(),
         description: "Anonymized Morse Learn training data (paginated)",
-        note: "User identifiers have been anonymized. Use ?page=N&limit=M for pagination."
+        export_schema_version: 2,
+        note: "Stable anonymous user and event identifiers are included. Use ?page=N&limit=M for pagination."
       },
       pagination: {
         current_page: page,
@@ -305,44 +405,15 @@ app.get('/data-dump', requireDataExportPassword, async (req, res) => {
 // Sample data endpoint (no password required, limited to 100 records)
 app.get('/data-sample', async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT
-        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
-        progress_dump,
-        progress_percent,
-        time_played,
-        DATE(date_created) as date_created,
-        visual_hints,
-        speech_hints,
-        sound,
-        settings_dump,
-        progress_detail,
-        settings_changed
-      FROM progress_log
-      ORDER BY date_created DESC, id DESC
-      LIMIT 100
-    `);
-
-    const anonymizedData = rows.map(row => ({
-      anonymous_user_id: row.anonymous_user_id,
-      progress_dump: row.progress_dump,
-      progress_percent: row.progress_percent,
-      time_played_ms: row.time_played,
-      time_played_minutes: Math.round(row.time_played / 1000 / 60 * 100) / 100,
-      date_created: row.date_created,
-      visual_hints: row.visual_hints,
-      speech_hints: row.speech_hints,
-      sound: row.sound,
-      settings_dump: row.settings_dump,
-      progress_detail: row.progress_detail,
-      settings_changed: row.settings_changed
-    }));
+    const [rows] = await pool.query(getExportQuery('LIMIT 100'));
+    const anonymizedData = rows.map(buildExportRecord);
 
     res.json({
       metadata: {
         total_records: anonymizedData.length,
         export_date: new Date().toISOString(),
         description: "Sample of Morse Learn training data (100 records)",
+        export_schema_version: 2,
         note: "This is a free sample. For full dataset access, use /api/data-dump with password."
       },
       data: anonymizedData
@@ -366,45 +437,56 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
       return res.status(400).json({ error: 'CSV limit cannot exceed 50,000 records per request' });
     }
 
-    const [rows] = await pool.query(`
-      SELECT
-        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
-        progress_dump,
-        progress_percent,
-        time_played,
-        DATE(date_created) as date_created,
-        visual_hints,
-        speech_hints,
-        sound,
-        settings_dump,
-        progress_detail,
-        settings_changed
-      FROM progress_log
-      ORDER BY date_created DESC, id DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+    const [rows] = await pool.query(getExportQuery('LIMIT ? OFFSET ?'), [limit, offset]);
+    const exportRows = rows.map(buildExportRecord);
 
     // Convert to CSV
-    const csvHeader = 'anonymous_user_id,progress_dump,progress_percent,time_played_ms,time_played_minutes,date_created,visual_hints,speech_hints,sound,settings_dump,progress_detail,settings_changed\n';
-    const csvRows = rows.map(row => {
-      const timePlayed = row.time_played;
-      const timePlayedMinutes = Math.round(timePlayed / 1000 / 60 * 100) / 100;
-
-      return [
-        row.anonymous_user_id,
-        `"${row.progress_dump.replace(/"/g, '""')}"`,
-        row.progress_percent,
-        timePlayed,
-        timePlayedMinutes,
-        row.date_created,
-        row.visual_hints,
-        row.speech_hints,
-        row.sound,
-        `"${row.settings_dump.replace(/"/g, '""')}"`,
-        row.progress_detail ? `"${row.progress_detail.replace(/"/g, '""')}"` : '',
-        row.settings_changed
-      ].join(',');
-    }).join('\n');
+    const csvHeader = [
+      'anonymous_user_id',
+      'anonymous_event_id',
+      'user_event_index',
+      'user_event_count',
+      'progress_dump',
+      'progress_percent',
+      'time_played_ms',
+      'time_played_minutes',
+      'date_created',
+      'date_created_day',
+      'visual_hints',
+      'speech_hints',
+      'sound',
+      'settings_dump',
+      'progress_detail',
+      'settings_changed',
+      'initial_visual_hints',
+      'initial_speech_hints',
+      'initial_sound',
+      'initial_settings_dump',
+      'differs_from_initial_settings'
+    ].join(',') + '\n';
+    const csvRows = exportRows.map(row => [
+      row.anonymous_user_id,
+      row.anonymous_event_id,
+      row.user_event_index,
+      row.user_event_count,
+      row.progress_dump,
+      row.progress_percent,
+      row.time_played_ms,
+      row.time_played_minutes,
+      row.date_created,
+      row.date_created_day,
+      row.visual_hints,
+      row.speech_hints,
+      row.sound,
+      row.settings_dump,
+      row.progress_detail,
+      row.settings_changed,
+      row.initial_visual_hints,
+      row.initial_speech_hints,
+      row.initial_sound,
+      row.initial_settings_dump,
+      row.differs_from_initial_settings
+    ].map(csvEscape).join(',')).join('\n');
 
     const csv = csvHeader + csvRows;
     const filename = `morse-learn-data-export-page${page}.csv`;
