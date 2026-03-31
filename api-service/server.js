@@ -244,7 +244,7 @@ app.get('/data-dump', requireDataExportPassword, async (req, res) => {
     // Get paginated data
     const [rows] = await pool.query(`
       SELECT
-        CONCAT('user_', ROW_NUMBER() OVER (ORDER BY user_identifier)) as anonymous_user_id,
+        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
         progress_dump,
         progress_percent,
         time_played,
@@ -256,7 +256,7 @@ app.get('/data-dump', requireDataExportPassword, async (req, res) => {
         progress_detail,
         settings_changed
       FROM progress_log
-      ORDER BY date_created DESC
+      ORDER BY date_created DESC, id DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
 
@@ -307,7 +307,7 @@ app.get('/data-sample', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT
-        CONCAT('user_', ROW_NUMBER() OVER (ORDER BY user_identifier)) as anonymous_user_id,
+        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
         progress_dump,
         progress_percent,
         time_played,
@@ -319,7 +319,7 @@ app.get('/data-sample', async (req, res) => {
         progress_detail,
         settings_changed
       FROM progress_log
-      ORDER BY date_created DESC
+      ORDER BY date_created DESC, id DESC
       LIMIT 100
     `);
 
@@ -368,7 +368,7 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
 
     const [rows] = await pool.query(`
       SELECT
-        CONCAT('user_', ROW_NUMBER() OVER (ORDER BY user_identifier)) as anonymous_user_id,
+        CONCAT('user_', SHA2(user_identifier, 256)) as anonymous_user_id,
         progress_dump,
         progress_percent,
         time_played,
@@ -380,7 +380,7 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
         progress_detail,
         settings_changed
       FROM progress_log
-      ORDER BY date_created DESC
+      ORDER BY date_created DESC, id DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
 
