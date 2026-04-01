@@ -46,7 +46,7 @@ This is the API service for the Morse Learn application. It handles analytics da
   - Returns anonymized training data in JSON format
   - Supports pagination: `?page=1&limit=1000` (max 10,000 per request)
   - Includes metadata about the export and pagination info
-  - Includes stable anonymized user IDs, stable anonymized event IDs, full timestamps, and derived first-observed settings
+  - Includes stable anonymized user IDs, stable anonymized event IDs, full timestamps, and normalized JSON fields
 
 - `GET /api/data-dump/csv` (🔒 Password Protected, Paginated)
   - Returns anonymized training data in CSV format

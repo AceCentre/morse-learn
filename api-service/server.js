@@ -153,8 +153,6 @@ function buildExportRecord(row) {
   return {
     anonymous_user_id: row.anonymous_user_id,
     anonymous_event_id: row.anonymous_event_id,
-    user_event_index: row.user_event_index,
-    user_event_count: row.user_event_count,
     progress_dump: normalizeExportJsonText(row.progress_dump),
     progress_percent: row.progress_percent,
     time_played_ms: row.time_played,
@@ -166,12 +164,7 @@ function buildExportRecord(row) {
     sound: row.sound,
     settings_dump: normalizeExportJsonText(row.settings_dump),
     progress_detail: normalizeExportJsonText(row.progress_detail),
-    settings_changed: row.settings_changed,
-    initial_visual_hints: row.initial_visual_hints,
-    initial_speech_hints: row.initial_speech_hints,
-    initial_sound: row.initial_sound,
-    initial_settings_dump: normalizeExportJsonText(row.initial_settings_dump),
-    differs_from_initial_settings: Boolean(row.differs_from_initial_settings)
+    settings_changed: row.settings_changed
   };
 }
 
@@ -190,26 +183,6 @@ function csvEscape(value) {
 
 function getExportQuery(limitClause) {
   return `
-    WITH first_rows AS (
-      SELECT
-        ranked.user_identifier,
-        ranked.visual_hints AS initial_visual_hints,
-        ranked.speech_hints AS initial_speech_hints,
-        ranked.sound AS initial_sound,
-        ranked.settings_dump AS initial_settings_dump
-      FROM (
-        SELECT
-          id,
-          user_identifier,
-          visual_hints,
-          speech_hints,
-          sound,
-          settings_dump,
-          ROW_NUMBER() OVER (PARTITION BY user_identifier ORDER BY date_created ASC, id ASC) AS user_row_rank
-        FROM progress_log
-      ) ranked
-      WHERE ranked.user_row_rank = 1
-    )
     SELECT
       CONCAT('user_', SHA2(p.user_identifier, 256)) AS anonymous_user_id,
       CONCAT('event_', SHA2(CAST(p.id AS CHAR), 256)) AS anonymous_event_id,
@@ -222,20 +195,8 @@ function getExportQuery(limitClause) {
       p.sound,
       p.settings_dump,
       p.progress_detail,
-      p.settings_changed,
-      ROW_NUMBER() OVER (PARTITION BY p.user_identifier ORDER BY p.date_created ASC, p.id ASC) AS user_event_index,
-      COUNT(*) OVER (PARTITION BY p.user_identifier) AS user_event_count,
-      f.initial_visual_hints,
-      f.initial_speech_hints,
-      f.initial_sound,
-      f.initial_settings_dump,
-      (
-        f.initial_visual_hints <> p.visual_hints OR
-        f.initial_speech_hints <> p.speech_hints OR
-        f.initial_sound <> p.sound
-      ) AS differs_from_initial_settings
+      p.settings_changed
     FROM progress_log p
-    JOIN first_rows f ON f.user_identifier = p.user_identifier
     ORDER BY p.date_created DESC, p.id DESC
     ${limitClause}
   `;
@@ -444,8 +405,6 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
     const csvHeader = [
       'anonymous_user_id',
       'anonymous_event_id',
-      'user_event_index',
-      'user_event_count',
       'progress_dump',
       'progress_percent',
       'time_played_ms',
@@ -457,18 +416,11 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
       'sound',
       'settings_dump',
       'progress_detail',
-      'settings_changed',
-      'initial_visual_hints',
-      'initial_speech_hints',
-      'initial_sound',
-      'initial_settings_dump',
-      'differs_from_initial_settings'
+      'settings_changed'
     ].join(',') + '\n';
     const csvRows = exportRows.map(row => [
       row.anonymous_user_id,
       row.anonymous_event_id,
-      row.user_event_index,
-      row.user_event_count,
       row.progress_dump,
       row.progress_percent,
       row.time_played_ms,
@@ -480,12 +432,7 @@ app.get('/data-dump/csv', requireDataExportPassword, async (req, res) => {
       row.sound,
       row.settings_dump,
       row.progress_detail,
-      row.settings_changed,
-      row.initial_visual_hints,
-      row.initial_speech_hints,
-      row.initial_sound,
-      row.initial_settings_dump,
-      row.differs_from_initial_settings
+      row.settings_changed
     ].map(csvEscape).join(',')).join('\n');
 
     const csv = csvHeader + csvRows;

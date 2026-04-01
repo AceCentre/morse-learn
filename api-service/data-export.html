@@ -172,8 +172,6 @@
                 <ul>
                     <li><strong>anonymous_user_id:</strong> Stable anonymized user identifier</li>
                     <li><strong>anonymous_event_id:</strong> Stable anonymized event identifier for each exported row</li>
-                    <li><strong>user_event_index:</strong> Order of this event within the anonymized user's history</li>
-                    <li><strong>user_event_count:</strong> Total number of exported events for the anonymized user</li>
                     <li><strong>progress_dump:</strong> Normalized JSON string containing letter-by-letter progress scores</li>
                     <li><strong>progress_percent:</strong> Overall completion percentage (0-100)</li>
                     <li><strong>time_played_ms:</strong> Cumulative play time in milliseconds at export time</li>
@@ -186,9 +184,6 @@
                     <li><strong>settings_dump:</strong> Normalized JSON string of current settings</li>
                     <li><strong>progress_detail:</strong> Normalized JSON string of progress details</li>
                     <li><strong>settings_changed:</strong> Whether settings were changed during session</li>
-                    <li><strong>initial_visual_hints / initial_speech_hints / initial_sound:</strong> Settings from the user's first recorded event</li>
-                    <li><strong>initial_settings_dump:</strong> Normalized JSON string of initial settings</li>
-                    <li><strong>differs_from_initial_settings:</strong> Whether the current row differs from the user's initial recorded settings</li>
                 </ul>
                 
                 <h3>Privacy & Anonymization:</h3>
