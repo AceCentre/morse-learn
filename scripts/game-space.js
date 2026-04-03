@@ -559,6 +559,9 @@ class GameSpace {
         this.mistakeCount = 0;
         this.consecutiveCorrect++;
 
+        // Allow input during the correct animation and hints so the user can keep going without waiting
+        this.inputReady = true;
+
         this.game.add
           .tween(word.pills[word.currentLetterIndex].scale)
           .to({ x: 0, y: 0 }, 500, Phaser.Easing.Back.In, true);
@@ -588,14 +591,12 @@ class GameSpace {
           this.updateWordBackgrounds();
         }
 
+        this.slideLetters();
+
+
         word = this.currentWords[this.currentWordIndex];
         letter = word.myLetters[word.currentLetterIndex];
         let theLetterIndex = this.newLetterArray.indexOf(typedLetter);
-
-        this.slideLetters();
-
-        // We can accept the input before we give the hint
-        this.inputReady = true;
 
         this.parent.header.updateProgressLights(
           this.letterScoreDict,
@@ -623,6 +624,9 @@ class GameSpace {
         this.letterScoreDict[letter] -= 1;
         word.shake(word.currentLetterIndex);
 
+        // Allow input during the wrong animation and hints so the user can try again without waiting
+        this.inputReady = true;
+
         if (this.game.have_speech_assistive) {
           await this.playWrong();
         }
@@ -632,9 +636,6 @@ class GameSpace {
         if (this.letterScoreDict[letter] < -config.app.LEARNED_THRESHOLD - 2) {
           this.letterScoreDict[letter] = -config.app.LEARNED_THRESHOLD - 2;
         }
-
-        // Accept new input immediately and let hints continue asynchronously.
-        this.inputReady = true;
 
         await word.setStyle(word.currentLetterIndex);
         await this.playLetter(letter);
